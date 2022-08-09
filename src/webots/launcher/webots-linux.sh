@@ -85,7 +85,7 @@ if [ command -v prime-switch >/dev/null 2>&1 ] &&
   export __VK_LAYER_NV_optimus=NVIDIA_only
   export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
   "$webots_home/bin/webots-bin" "$@" &
-elif [ command -v primusrun >/dev/null 2>&1 ]
+elif [ command -v primusrun >/dev/null 2>&1 ]; then
   primusrun "$webots_home/bin/webots-bin" "$@" &
 else
   "$webots_home/bin/webots-bin" "$@" &
