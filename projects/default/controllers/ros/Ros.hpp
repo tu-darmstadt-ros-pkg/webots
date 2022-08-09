@@ -54,6 +54,8 @@ public:
 
   static std::string fixedNameString(const std::string &name);
 
+  bool enableSensor(std::string name, double rate = -1.0);
+
 protected:
   virtual void setupRobot();
   virtual void setRosDevices(const char **hiddenDevices, int numberHiddenDevices);

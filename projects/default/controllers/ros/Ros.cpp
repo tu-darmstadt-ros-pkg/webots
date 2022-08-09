@@ -419,6 +419,33 @@ void Ros::setRosDevices(const char **hiddenDevices, int numberHiddenDevices) {
   mDeviceListService = mNodeHandle->advertiseService("robot/get_device_list", &Ros::getDeviceListCallback, this);
 }
 
+bool Ros::enableSensor(std::string name, double rate) {
+  double stepSize;
+  if (rate < 0) {
+    stepSize = mRobot->getBasicTimeStep();
+  } 
+  else {
+    //Rounding to a multiple of robot steps, so sensors can be published correctly (Should be whole timesteps, multiple of 16ms)  
+    //1000 ms / simstep in ms / desired rate 
+    double factor = 1000 / mRobot->getBasicTimeStep() / rate;
+    if (factor < 1.0) {
+      factor = 1.0;
+    }
+    stepSize = std::round(factor) * 16;
+    //could be done with modulo, rate would be rounded up always
+  }
+
+  for (RosSensor *rosSensor : mSensorList) {
+    //std::cout << rosSensor->deviceName() << std::endl;
+    if (name == rosSensor->deviceName()) {
+      rosSensor->enableSensor(stepSize);
+      std::cout << "Enabled sensor " << name.c_str() << std::endl;
+      return true;
+    }
+  }
+  return false;
+}
+
 // timestep callback allowing a ros node to run the simulation step by step
 // cppcheck-suppress constParameter
 bool Ros::timeStepCallback(webots_ros::set_int::Request &req, webots_ros::set_int::Response &res) {
