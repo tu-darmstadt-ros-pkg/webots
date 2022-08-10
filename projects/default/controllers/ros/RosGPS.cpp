@@ -41,7 +41,9 @@ ros::Publisher RosGPS::createPublisher(std::vector<std::string> *topics) {
     if (topics->size() == 3) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for GPS " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for GPS " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
   
   webots_ros::Float64Stamped speedType;

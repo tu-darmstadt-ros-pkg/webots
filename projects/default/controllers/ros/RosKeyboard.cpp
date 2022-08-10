@@ -29,7 +29,9 @@ ros::Publisher RosKeyboard::createPublisher(std::vector<std::string> *topics) {
     if (topics->size() == 1) {
       topicName = topics->at(0);
     }
-    std::cerr << "Invalid amount of topics provided for Keyboard " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for Keyboard " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   return RosDevice::rosAdvertiseTopic(topicName, type);

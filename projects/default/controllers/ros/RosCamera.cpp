@@ -81,7 +81,9 @@ ros::Publisher RosCamera::createPublisher(std::vector<std::string> *topics) {
       createCameraInfoPublisher(topics->at(1), true);
       return createImagePublisher(topics->at(0), true);
     }
-    std::cerr << "Invalid amount of topics provided for camera " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for camera " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
   createCameraInfoPublisher("cameraInfo");
   return createImagePublisher("image");

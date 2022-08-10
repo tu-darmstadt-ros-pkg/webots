@@ -45,7 +45,9 @@ ros::Publisher RosRadar::createPublisher(std::vector<std::string> *topics) {
     if (topics->size() == 1) {
       RosDevice::rosAdvertiseTopic(topics->at(0), type);
     }
-    std::cerr << "Invalid amount of topics provided for Radar " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for Radar " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   return RosDevice::rosAdvertiseTopic(topicName, type);

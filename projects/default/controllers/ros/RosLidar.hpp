@@ -59,6 +59,8 @@ private:
   RosLidar &operator=(const RosLidar &);  // non copyable
   void cleanup() { mLidar->disable(); }
 
+  std::string mPointCloudTopic;
+
   Lidar *mLidar;
   bool mIsPointCloudEnabled;
   ros::Publisher mPointCloudPublisher;

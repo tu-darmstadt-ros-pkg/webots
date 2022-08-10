@@ -36,7 +36,9 @@ ros::Publisher RosCompass::createPublisher(std::vector<std::string> *topics) {
     if (topics->size() == 1) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for Compass " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for Compass " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   sensor_msgs::MagneticField type;

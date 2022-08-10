@@ -49,7 +49,9 @@ ros::Publisher RosReceiver::createPublisher(std::vector<std::string> *topics) {
     if (topics->size() == 1) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for Receiver " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for Receiver " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
   webots_ros::StringStamped type;
   std::string topicName = RosDevice::fixedDeviceName() + "/data";

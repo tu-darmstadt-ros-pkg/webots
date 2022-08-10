@@ -35,6 +35,7 @@ RosLidar::RosLidar(Lidar *lidar, Ros *ros) : RosSensor(lidar->getName(), lidar, 
     RosDevice::rosAdvertiseService(deviceNameFixed + '/' + "get_layer_range_image", &RosLidar::getLayerRangeImage);
   mGetLayerPointCloud =
     RosDevice::rosAdvertiseService(deviceNameFixed + '/' + "get_layer_point_cloud", &RosLidar::getLayerPointCloud);
+  mPointCloudTopic = "";
 }
 
 RosLidar::~RosLidar() {
@@ -56,19 +57,31 @@ ros::Publisher RosLidar::createPublisher(std::vector<std::string> *topics) {
 
   bool topic_override = false;
   if (topics != nullptr) {
-    if (topics->size() == 2) {
+    if (topics->size() > 2) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for Lidar " << RosDevice::fixedDeviceName() << std::endl;
+    //directly enable point cloud, if provided with topic
+    else if (topics->size() == 3 && topics->at(2) != "") {
+      mPointCloudTopic = topics->at(2);
+      mIsPointCloudEnabled = true;
+      std::string deviceNameFixed = RosDevice::fixedDeviceName();
+      sensor_msgs::PointCloud2 type;
+      type.header.frame_id = deviceNameFixed;
+      mPointCloudPublisher = RosDevice::rosAdvertiseTopic(mPointCloudTopic, type);
+      mLidar->enablePointCloud();
+    }
+    else {
+      std::cerr << "Invalid amount of topics provided for Lidar " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
   std::string deviceNameFixed = RosDevice::fixedDeviceName();
-  sensor_msgs::LaserScan LaserScaneType;
+  sensor_msgs::LaserScan LaserScanType;
   if (mLidar->getNumberOfLayers() == 1) {
     std::string scan_topic = deviceNameFixed + "/laser_scan";
     if (topic_override) {
       scan_topic = topics->at(0);
     }
-    mLaserScanPublisher = RosDevice::rosAdvertiseTopic(scan_topic, LaserScaneType);
+    mLaserScanPublisher = RosDevice::rosAdvertiseTopic(scan_topic, LaserScanType);
   }
   sensor_msgs::Image type;
   type.height = mLidar->getNumberOfLayers();
@@ -209,7 +222,11 @@ bool RosLidar::enablePointCloudCallback(webots_ros::set_bool::Request &req, webo
     sensor_msgs::PointCloud2 type;
     type.header.frame_id = deviceNameFixed;
 
-    mPointCloudPublisher = RosDevice::rosAdvertiseTopic(deviceNameFixed + "/point_cloud", type);
+    if (mPointCloudTopic == "") {
+      mPointCloudTopic = deviceNameFixed + "/point_cloud";
+    }
+
+    mPointCloudPublisher = RosDevice::rosAdvertiseTopic(mPointCloudTopic, type);
     mLidar->enablePointCloud();
   } else if (mIsPointCloudEnabled && !req.value) {
     mIsPointCloudEnabled = false;

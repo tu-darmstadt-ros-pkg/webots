@@ -419,7 +419,7 @@ void Ros::setRosDevices(const char **hiddenDevices, int numberHiddenDevices) {
   mDeviceListService = mNodeHandle->advertiseService("robot/get_device_list", &Ros::getDeviceListCallback, this);
 }
 
-bool Ros::enableSensor(std::string name, double rate, std::vector<std::string>* topics) {
+bool Ros::enableSensor(std::string name, double rate, std::vector<std::string> *topics) {
   double stepSize;
   if (rate < 0) {
     stepSize = mRobot->getBasicTimeStep();

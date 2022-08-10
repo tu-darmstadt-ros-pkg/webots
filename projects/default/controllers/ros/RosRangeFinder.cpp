@@ -38,7 +38,9 @@ ros::Publisher RosRangeFinder::createPublisher(std::vector<std::string> *topics)
     if (topics->size() == 2) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for RangeFinder " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for RangeFinder " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
   
   if (topic_override) {

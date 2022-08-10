@@ -35,7 +35,9 @@ ros::Publisher RosLightSensor::createPublisher(std::vector<std::string> *topics)
     if (topics->size() == 1) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for LightSensor " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for LightSensor " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   sensor_msgs::Illuminance type;

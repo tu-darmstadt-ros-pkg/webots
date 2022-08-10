@@ -65,7 +65,9 @@ ros::Publisher RosJoystick::createPublisher(std::vector<std::string> *topics) {
     if (topics->size() == 1) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for Joystick " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for Joystick " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   webots_ros::Int32Stamped type;

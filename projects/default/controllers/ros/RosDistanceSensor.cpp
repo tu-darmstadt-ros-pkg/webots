@@ -47,7 +47,9 @@ ros::Publisher RosDistanceSensor::createPublisher(std::vector<std::string> *topi
     if (topics->size() == 1) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for DistanceSensor " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for DistanceSensor " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   sensor_msgs::Range type;

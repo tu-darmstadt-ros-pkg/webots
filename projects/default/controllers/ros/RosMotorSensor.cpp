@@ -31,7 +31,7 @@ ros::Publisher RosMotorSensor::createPublisher(std::vector<std::string> *topics)
 
   if (topics != nullptr) {
     if (topics->size() == 1) {
-      RosDevice::rosAdvertiseTopic(topics->at(0), type);
+      return RosDevice::rosAdvertiseTopic(topics->at(0), type);
     }
     std::cerr << "Invalid amount of topics provided for MotorSensor " << RosDevice::fixedDeviceName() << std::endl;
   }

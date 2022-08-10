@@ -27,7 +27,9 @@ ros::Publisher RosBatterySensor::createPublisher(std::vector<std::string> *topic
     if (topics->size() == 1) {
       topic_override = true;
     }
-    std::cerr << "Invalid amount of topics provided for BatterySensor " << RosDevice::fixedDeviceName() << std::endl;
+    else {
+      std::cerr << "Invalid amount of topics provided for BatterySensor " << RosDevice::fixedDeviceName() << std::endl;
+    }
   }
 
   webots_ros::Float64Stamped type;
