@@ -29,9 +29,23 @@ RosConnector::~RosConnector() {
   cleanup();
 }
 
-ros::Publisher RosConnector::createPublisher() {
+ros::Publisher RosConnector::createPublisher(std::vector<std::string> *topics) {
+
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for Connector " << RosDevice::fixedDeviceName() << std::endl;
+  }
+
   webots_ros::Int8Stamped type;
   std::string topicName = RosDevice::fixedDeviceName() + "/presence";
+
+  if (topic_override) {
+    topicName = topics->at(0);
+  }
+
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

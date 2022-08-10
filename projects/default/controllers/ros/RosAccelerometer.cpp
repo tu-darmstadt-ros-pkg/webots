@@ -29,9 +29,17 @@ RosAccelerometer::~RosAccelerometer() {
 }
 
 // creates a publisher for accelerometer values with a sensor_msgs/Imu as message type
-ros::Publisher RosAccelerometer::createPublisher() {
+ros::Publisher RosAccelerometer::createPublisher(std::vector<std::string> *topics) {
   sensor_msgs::Imu type;
   std::string topicName = RosDevice::fixedDeviceName() + "/values";
+
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topicName = topics->at(0);
+    }
+    std::cerr << "Invalid amount of topics provided for Accelerometer " << RosDevice::fixedDeviceName() << std::endl;
+  }
+  
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

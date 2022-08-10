@@ -27,7 +27,7 @@ public:
   RosAccelerometer(Accelerometer *accelerometer, Ros *ros);
   virtual ~RosAccelerometer();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mAccelerometer->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

@@ -54,7 +54,7 @@ public:
 
   static std::string fixedNameString(const std::string &name);
 
-  bool enableSensor(std::string name, double rate = -1.0);
+  bool enableSensor(std::string name, double rate = -1.0, std::vector<std::string> *topics=nullptr);
 
 protected:
   virtual void setupRobot();

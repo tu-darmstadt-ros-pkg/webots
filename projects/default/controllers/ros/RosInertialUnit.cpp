@@ -27,9 +27,19 @@ RosInertialUnit::~RosInertialUnit() {
 }
 
 // creates a publisher for InertialUnit values with a sensor_msgs/Imu as message type
-ros::Publisher RosInertialUnit::createPublisher() {
+ros::Publisher RosInertialUnit::createPublisher(std::vector<std::string> *topics) {
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for InertialUnit " << RosDevice::fixedDeviceName() << std::endl;
+  }
   sensor_msgs::Imu type;
   std::string topicName = RosDevice::fixedDeviceName() + "/quaternion";
+  if (topic_override) {
+    topicName = topics->at(0);
+  }
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

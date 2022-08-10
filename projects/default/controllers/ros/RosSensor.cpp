@@ -43,7 +43,7 @@ bool RosSensor::sensorEnableCallback(webots_ros::set_int::Request &req, webots_r
   return true;
 }
 
-bool RosSensor::enableSensor(int timestep) {
+bool RosSensor::enableSensor(int timestep, std::vector<std::string>* topics) {
   if (timestep == 0) {
     for (unsigned int i = 0; i < mPublishList.size(); ++i)
       mPublishList[i].mPublisher.shutdown();
@@ -65,7 +65,7 @@ bool RosSensor::enableSensor(int timestep) {
       if (minPeriod == timestep)
         rosEnable(timestep);
       publisherDetails details;
-      details.mPublisher = createPublisher();
+      details.mPublisher = createPublisher(topics);
       details.mSamplingPeriod = timestep;
       details.mNewPublisher = true;
       mPublishList.push_back(details);

@@ -24,9 +24,21 @@ RosAltimeter::~RosAltimeter() {
 }
 
 // creates a publisher for altimeter value with a {Float64}
-ros::Publisher RosAltimeter::createPublisher() {
+ros::Publisher RosAltimeter::createPublisher(std::vector<std::string> *topics) {
+
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for Altimeter " << RosDevice::fixedDeviceName() << std::endl;
+  }
+
   webots_ros::Float64Stamped type;
   std::string topicName = RosDevice::fixedDeviceName() + "/value";
+  if (topic_override) {
+    topicName = topics->at(0);
+  }
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

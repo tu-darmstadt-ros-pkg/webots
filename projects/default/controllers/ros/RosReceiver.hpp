@@ -32,7 +32,7 @@ public:
   RosReceiver(Receiver *receiver, Ros *ros);
   virtual ~RosReceiver();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   bool setChannelCallback(webots_ros::set_int::Request &req, webots_ros::set_int::Response &res);
   bool getChannelCallback(webots_ros::get_int::Request &req, webots_ros::get_int::Response &res);

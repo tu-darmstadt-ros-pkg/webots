@@ -29,7 +29,7 @@ public:
   RosGPS(GPS *gps, Ros *ros);
   virtual ~RosGPS();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishAuxiliaryValue() override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mGPS->enable(samplingPeriod); }

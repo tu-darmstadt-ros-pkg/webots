@@ -28,7 +28,7 @@ public:
   RosConnector(Connector *connector, Ros *ros);
   virtual ~RosConnector();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mConnector->enablePresence(samplingPeriod); }
   void rosDisable() override { mConnector->disablePresence(); }

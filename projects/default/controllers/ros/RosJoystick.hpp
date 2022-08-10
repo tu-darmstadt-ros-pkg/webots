@@ -31,7 +31,7 @@ public:
   RosJoystick(Joystick *joystick, Ros *ros);
   virtual ~RosJoystick();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool getModelCallback(webots_ros::get_string::Request &req, webots_ros::get_string::Response &res);

@@ -58,9 +58,23 @@ RosJoystick::~RosJoystick() {
 }
 
 // creates a publisher for joystick values with a webots_ros/Int32Stamped as message type
-ros::Publisher RosJoystick::createPublisher() {
+ros::Publisher RosJoystick::createPublisher(std::vector<std::string> *topics) {
+
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for Joystick " << RosDevice::fixedDeviceName() << std::endl;
+  }
+
   webots_ros::Int32Stamped type;
   std::string topicName = "joystick/pressed_button";
+  
+  if (topic_override) {
+    topicName = topics->at(0);
+  }
+
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

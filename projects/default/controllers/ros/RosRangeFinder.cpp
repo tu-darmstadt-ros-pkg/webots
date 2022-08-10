@@ -31,15 +31,44 @@ RosRangeFinder::~RosRangeFinder() {
 
 // creates a publisher for range_finder image with
 // a [ImageWidth x ImageHeight] {float} array
-ros::Publisher RosRangeFinder::createPublisher() {
+ros::Publisher RosRangeFinder::createPublisher(std::vector<std::string> *topics) {
+
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 2) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for RangeFinder " << RosDevice::fixedDeviceName() << std::endl;
+  }
+  
+  if (topic_override) {
+    createCameraInfoPublisher(topics->at(1), topic_override);
+  return createRangeImagePublisher(topics->at(0), true);
+  }
+  
+  createCameraInfoPublisher("camera_info");
+  return createRangeImagePublisher("range_image");
+}
+
+ros::Publisher RosRangeFinder::createRangeImagePublisher(const std::string &name, bool override) {
   sensor_msgs::Image type;
   type.height = mRangeFinder->getHeight();
   type.width = mRangeFinder->getWidth();
   type.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
   type.step = sizeof(float) * mRangeFinder->getWidth();
 
-  mRangeTopic = RosDevice::fixedDeviceName() + "/range_image";
+  if (override) {
+    mRangeTopic = name;
+  }
+  else {
+    mRangeTopic = RosDevice::fixedDeviceName() + "/" + name;
+  }  
+  
   return RosDevice::rosAdvertiseTopic(mRangeTopic, type);
+}
+
+void RosRangeFinder::createCameraInfoPublisher(const std::string &name, bool override) {
+  //TODO
 }
 
 // get image from the RangeFinder and publish it

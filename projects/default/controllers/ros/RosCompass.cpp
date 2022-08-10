@@ -29,9 +29,23 @@ RosCompass::~RosCompass() {
 
 // creates a publisher for compass values with a [3x1] {double} array
 // for x,y and z north's coordinates as message type
-ros::Publisher RosCompass::createPublisher() {
+ros::Publisher RosCompass::createPublisher(std::vector<std::string> *topics) {
+
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for Compass " << RosDevice::fixedDeviceName() << std::endl;
+  }
+
   sensor_msgs::MagneticField type;
   std::string topicName = RosDevice::fixedDeviceName() + "/values";
+
+  if (topic_override) {
+    topicName = topics->at(0);
+  }
+  
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

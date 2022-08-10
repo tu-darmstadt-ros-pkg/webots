@@ -27,7 +27,7 @@ public:
   RosLightSensor(LightSensor *lightSensor, Ros *ros);
   virtual ~RosLightSensor();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mLightSensor->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

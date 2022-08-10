@@ -27,7 +27,7 @@ public:
   RosCompass(Compass *compass, Ros *ros);
   virtual ~RosCompass();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mCompass->enable(samplingPeriod); }
   void rosDisable() override { mCompass->disable(); }

@@ -25,7 +25,7 @@ public:
   RosBatterySensor(Robot *robot, Ros *ros);
   virtual ~RosBatterySensor() { cleanup(); }
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mRobot->batterySensorEnable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

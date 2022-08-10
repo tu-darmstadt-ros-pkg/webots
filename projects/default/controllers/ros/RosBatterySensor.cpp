@@ -20,9 +20,22 @@ RosBatterySensor::RosBatterySensor(Robot *robot, Ros *ros) : RosSensor("battery_
 }
 
 // creates a publisher for battery sensor value with a {double} as message type
-ros::Publisher RosBatterySensor::createPublisher() {
+ros::Publisher RosBatterySensor::createPublisher(std::vector<std::string> *topics) {
+
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for BatterySensor " << RosDevice::fixedDeviceName() << std::endl;
+  }
+
   webots_ros::Float64Stamped type;
   std::string topicName = "battery_sensor/value";
+  if (topic_override) {
+    topicName = topics->at(0);
+  }
+
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

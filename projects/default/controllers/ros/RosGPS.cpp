@@ -35,14 +35,30 @@ RosGPS::~RosGPS() {
 
 // creates a publisher for GPS values with a [3x1] {double} array
 // for x,y and z absolute coordinates as message type
-ros::Publisher RosGPS::createPublisher() {
+ros::Publisher RosGPS::createPublisher(std::vector<std::string> *topics) {
+  bool topic_override = false;
+  if (topics != nullptr) {
+    if (topics->size() == 3) {
+      topic_override = true;
+    }
+    std::cerr << "Invalid amount of topics provided for GPS " << RosDevice::fixedDeviceName() << std::endl;
+  }
+  
   webots_ros::Float64Stamped speedType;
-  mSpeedPublisher = RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/speed", speedType);
+  std::string speedTopicName = RosDevice::fixedDeviceName() + "/speed";
+  if (topic_override)
+    speedTopicName = topics->at(2);
+  mSpeedPublisher = RosDevice::rosAdvertiseTopic(speedTopicName, speedType);
 
   std::string speedVectorTopicName = RosDevice::fixedDeviceName() + "/speed_vector";
+  if (topic_override)
+    speedVectorTopicName = topics->at(1);
   mSpeedVectorPublisher = RosDevice::rosAdvertiseTopic(speedVectorTopicName, geometry_msgs::PointStamped());
 
   std::string topicName = RosDevice::fixedDeviceName() + "/values";
+  
+  if (topic_override)
+    topicName = topics->at(0);
   if (mGPS->getCoordinateSystem() == GPS::WGS84)
     return RosDevice::rosAdvertiseTopic(topicName, sensor_msgs::NavSatFix());
   return RosDevice::rosAdvertiseTopic(topicName, geometry_msgs::PointStamped());

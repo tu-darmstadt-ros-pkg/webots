@@ -25,7 +25,7 @@ public:
   RosMotorSensor(Motor *motor, const std::string &sensorName, Ros *ros);
   virtual ~RosMotorSensor() { cleanup(); }
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override;
   void rosDisable() override { cleanup(); }

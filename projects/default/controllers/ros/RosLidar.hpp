@@ -34,7 +34,7 @@ public:
   RosLidar(Lidar *lidar, Ros *ros);
   virtual ~RosLidar();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool enablePointCloudCallback(webots_ros::set_bool::Request &req, webots_ros::set_bool::Response &res);

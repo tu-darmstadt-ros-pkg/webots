@@ -27,7 +27,7 @@ public:
   RosPositionSensor(PositionSensor *positionSensor, Ros *ros);
   virtual ~RosPositionSensor();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mPositionSensor->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

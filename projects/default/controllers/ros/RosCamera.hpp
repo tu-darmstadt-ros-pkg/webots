@@ -34,7 +34,7 @@ public:
   RosCamera(Camera *camera, Ros *ros);
   virtual ~RosCamera();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool getInfoCallback(webots_ros::camera_get_info::Request &req, webots_ros::camera_get_info::Response &res);
@@ -59,7 +59,8 @@ public:
   int rosSamplingPeriod() override { return mCamera->getSamplingPeriod(); }
 
 private:
-  ros::Publisher createImagePublisher(const std::string &name);
+  ros::Publisher createImagePublisher(const std::string &name, bool override=false);
+  void createCameraInfoPublisher(const std::string &name, bool override=false);
   void cleanup() { mCamera->disable(); }
 
   bool mIsRecognitionSegmentationEnabled;
@@ -67,6 +68,7 @@ private:
   Camera *mCamera;
   ros::Publisher mRecognitionObjectsPublisher;
   ros::Publisher mRecognitionSegmentationPublisher;
+  ros::Publisher mCameraInfoPublisher;
   ros::ServiceServer mInfoServer;
   ros::ServiceServer mFocusInfoServer;
   ros::ServiceServer mZoomInfoServer;

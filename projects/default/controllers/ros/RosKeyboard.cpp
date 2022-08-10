@@ -20,9 +20,18 @@ RosKeyboard::RosKeyboard(Keyboard *keyboard, Ros *ros) : RosSensor("keyboard", N
 }
 
 // creates a publisher for keyboard values with a webots_ros/Int8Stamped as message type
-ros::Publisher RosKeyboard::createPublisher() {
+ros::Publisher RosKeyboard::createPublisher(std::vector<std::string> *topics) {
+  
   webots_ros::Int32Stamped type;
   std::string topicName = "keyboard/key";
+  
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      topicName = topics->at(0);
+    }
+    std::cerr << "Invalid amount of topics provided for Keyboard " << RosDevice::fixedDeviceName() << std::endl;
+  }
+
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

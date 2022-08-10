@@ -27,7 +27,7 @@ public:
   RosRadar(Radar *radar, Ros *ros);
   virtual ~RosRadar();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   bool getMaxRangeCallback(webots_ros::get_float::Request &req, webots_ros::get_float::Response &res);
   bool getMinRangeCallback(webots_ros::get_float::Request &req, webots_ros::get_float::Response &res);

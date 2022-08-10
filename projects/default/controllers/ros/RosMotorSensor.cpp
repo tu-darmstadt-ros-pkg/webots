@@ -21,13 +21,20 @@ RosMotorSensor::RosMotorSensor(Motor *motor, const std::string &sensorName, Ros 
 }
 
 // creates a publisher for motor sensor values with a {double} as message
-ros::Publisher RosMotorSensor::createPublisher() {
+ros::Publisher RosMotorSensor::createPublisher(std::vector<std::string> *topics) {
   webots_ros::Float64Stamped type;
   std::string topicName;
   if (mMotor->getType() == Motor::LINEAR)
     topicName = RosDevice::fixedDeviceName() + "/force_feedback";
   else
     topicName = RosDevice::fixedDeviceName() + "/torque_feedback";
+
+  if (topics != nullptr) {
+    if (topics->size() == 1) {
+      RosDevice::rosAdvertiseTopic(topics->at(0), type);
+    }
+    std::cerr << "Invalid amount of topics provided for MotorSensor " << RosDevice::fixedDeviceName() << std::endl;
+  }
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

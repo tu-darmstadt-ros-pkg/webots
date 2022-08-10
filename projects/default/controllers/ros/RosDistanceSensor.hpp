@@ -29,7 +29,7 @@ public:
   RosDistanceSensor(DistanceSensor *distanceSensor, Ros *ros);
   virtual ~RosDistanceSensor();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mDistanceSensor->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

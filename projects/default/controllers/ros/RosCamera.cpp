@@ -75,18 +75,33 @@ RosCamera::~RosCamera() {
 
 // creates a publisher for camera image with
 // a [4 x ImageWidth x ImageHeight] {unsigned char} array
-ros::Publisher RosCamera::createPublisher() {
+ros::Publisher RosCamera::createPublisher(std::vector<std::string> *topics) {
+  if (topics != nullptr) {
+    if (topics->size() == 2) {
+      createCameraInfoPublisher(topics->at(1), true);
+      return createImagePublisher(topics->at(0), true);
+    }
+    std::cerr << "Invalid amount of topics provided for camera " << RosDevice::fixedDeviceName() << std::endl;
+  }
+  createCameraInfoPublisher("cameraInfo");
   return createImagePublisher("image");
 }
 
-ros::Publisher RosCamera::createImagePublisher(const std::string &name) {
+ros::Publisher RosCamera::createImagePublisher(const std::string &name, bool override) {
   sensor_msgs::Image type;
   type.height = mCamera->getHeight();
   type.width = mCamera->getWidth();
   type.encoding = sensor_msgs::image_encodings::BGRA8;
   // type.is_bigendian = 0;
   type.step = sizeof(char) * 4 * mCamera->getWidth();
+  if (override) {
+    return RosDevice::rosAdvertiseTopic(name, type);
+  }
   return RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
+}
+
+void RosCamera::createCameraInfoPublisher(const std::string &name, bool override) {
+  //TODO
 }
 
 // get image from the Camera and publish it
@@ -105,6 +120,8 @@ void RosCamera::publishValue(ros::Publisher publisher) {
   memcpy(&image.data[0], colorImage, sizeof(char) * 4 * mCamera->getWidth() * mCamera->getHeight());
 
   publisher.publish(image);
+
+  //TODO cmaeraInfo
 }
 
 void RosCamera::publishAuxiliaryValue() {

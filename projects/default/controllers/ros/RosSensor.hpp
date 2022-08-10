@@ -31,12 +31,12 @@ public:
   bool sensorEnableCallback(webots_ros::set_int::Request &req, webots_ros::set_int::Response &res);
   virtual bool samplingPeriodCallback(webots_ros::get_int::Request &req, webots_ros::get_int::Response &res);
   void publishValues(int step);
-  bool enableSensor(int timestep);
+  bool enableSensor(int timestep, std::vector<std::string> *topics=nullptr);
 
 protected:
   RosSensor(std::string deviceName, Device *device, Ros *ros, bool enableDefaultServices = true);
 
-  virtual ros::Publisher createPublisher() = 0;
+  virtual ros::Publisher createPublisher(std::vector<std::string>* topics=nullptr) = 0;
   virtual void publishValue(ros::Publisher publisher) = 0;
   virtual void publishAuxiliaryValue(){};
   virtual void rosEnable(int samplingPeriod) = 0;

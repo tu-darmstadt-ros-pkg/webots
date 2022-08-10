@@ -27,7 +27,7 @@ public:
   RosRangeFinder(RangeFinder *range_finder, Ros *ros);
   virtual ~RosRangeFinder();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   bool getInfoCallback(webots_ros::range_finder_get_info::Request &req, webots_ros::range_finder_get_info::Response &res);
   bool saveImageCallback(webots_ros::save_image::Request &req, webots_ros::save_image::Response &res);
@@ -38,6 +38,8 @@ public:
 
 private:
   void cleanup() { mRangeFinder->disable(); }
+  ros::Publisher createRangeImagePublisher(const std::string &name, bool override=false);
+  void createCameraInfoPublisher(const std::string &name, bool override=false);
 
   RangeFinder *mRangeFinder;
   std::string mRangeTopic;

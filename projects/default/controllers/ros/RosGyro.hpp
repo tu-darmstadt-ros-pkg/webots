@@ -27,7 +27,7 @@ public:
   RosGyro(Gyro *gyroscope, Ros *ros);
   virtual ~RosGyro();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mGyro->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }
