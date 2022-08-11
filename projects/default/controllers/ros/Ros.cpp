@@ -419,7 +419,7 @@ void Ros::setRosDevices(const char **hiddenDevices, int numberHiddenDevices) {
   mDeviceListService = mNodeHandle->advertiseService("robot/get_device_list", &Ros::getDeviceListCallback, this);
 }
 
-bool Ros::enableSensor(std::string name, double rate, std::vector<std::string> *topics) {
+bool Ros::enableSensor(const std::string name, double rate, std::vector<std::string> *topics) {
   double stepSize;
   if (rate < 0) {
     stepSize = mRobot->getBasicTimeStep();
@@ -444,6 +444,13 @@ bool Ros::enableSensor(std::string name, double rate, std::vector<std::string> *
     }
   }
   return false;
+}
+
+bool Ros::enableRosControl(const std::string name_space) {
+  ros::NodeHandle nh(*mNodeHandle, name_space);
+  mRosControl = new highlevel::RosControl(mRobot, &nh);
+  mUseRosControl = false; //Disable overriding of controller
+  return true;
 }
 
 // timestep callback allowing a ros node to run the simulation step by step

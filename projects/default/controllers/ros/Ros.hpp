@@ -54,14 +54,15 @@ public:
 
   static std::string fixedNameString(const std::string &name);
 
-  bool enableSensor(std::string name, double rate = -1.0, std::vector<std::string> *topics=nullptr);
-
 protected:
   virtual void setupRobot();
   virtual void setRosDevices(const char **hiddenDevices, int numberHiddenDevices);
   virtual void launchRos(int argc, char **argv);
   virtual int step(int duration) { return mRobot->step(duration); }
   Robot *mRobot;
+
+  bool enableSensor(const std::string name, double rate = -1.0, std::vector<std::string> *topics=nullptr);
+  bool enableRosControl(const std::string name_space);
 
 private:
   void fixName();
