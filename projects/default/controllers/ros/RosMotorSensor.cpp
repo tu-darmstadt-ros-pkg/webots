@@ -42,7 +42,12 @@ ros::Publisher RosMotorSensor::createPublisher(std::vector<std::string> *topics)
 void RosMotorSensor::publishValue(ros::Publisher publisher) {
   webots_ros::Float64Stamped value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   if (mMotor->getType() == Motor::LINEAR)
     value.data = mMotor->getForceFeedback();
   else

@@ -55,7 +55,12 @@ ros::Publisher RosCompass::createPublisher(std::vector<std::string> *topics) {
 void RosCompass::publishValue(ros::Publisher publisher) {
   sensor_msgs::MagneticField value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   value.magnetic_field.x = mCompass->getValues()[0];
   value.magnetic_field.y = mCompass->getValues()[1];
   value.magnetic_field.z = mCompass->getValues()[2];

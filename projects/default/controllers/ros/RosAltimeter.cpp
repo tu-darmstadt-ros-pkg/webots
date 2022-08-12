@@ -48,7 +48,12 @@ ros::Publisher RosAltimeter::createPublisher(std::vector<std::string> *topics) {
 void RosAltimeter::publishValue(ros::Publisher publisher) {
   webots_ros::Float64Stamped value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   value.data = mAltimeter->getValue();
   publisher.publish(value);
 }

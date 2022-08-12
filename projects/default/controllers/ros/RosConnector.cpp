@@ -55,7 +55,12 @@ ros::Publisher RosConnector::createPublisher(std::vector<std::string> *topics) {
 void RosConnector::publishValue(ros::Publisher publisher) {
   webots_ros::Int8Stamped value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   value.data = mConnector->getPresence();
   publisher.publish(value);
 }

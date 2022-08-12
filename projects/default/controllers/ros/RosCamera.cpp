@@ -16,6 +16,7 @@
 #include "RosMathUtils.hpp"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/image_encodings.h"
+#include "sensor_msgs/CameraInfo.h"
 #include "webots_ros/RecognitionObject.h"
 #include "webots_ros/RecognitionObjects.h"
 
@@ -85,7 +86,7 @@ ros::Publisher RosCamera::createPublisher(std::vector<std::string> *topics) {
       std::cerr << "Invalid amount of topics provided for camera " << RosDevice::fixedDeviceName() << std::endl;
     }
   }
-  createCameraInfoPublisher("cameraInfo");
+  createCameraInfoPublisher("camera_info");
   return createImagePublisher("image");
 }
 
@@ -103,15 +104,28 @@ ros::Publisher RosCamera::createImagePublisher(const std::string &name, bool ove
 }
 
 void RosCamera::createCameraInfoPublisher(const std::string &name, bool override) {
-  //TODO
+  sensor_msgs::CameraInfo type;
+  if (override) {
+    mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(name, type);
+  }
+  else {
+    mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
+  }
 }
 
 // get image from the Camera and publish it
 void RosCamera::publishValue(ros::Publisher publisher) {
+  std::cout << mCameraInfoPublisher.getTopic() << std::endl;
+  std::cout << mCameraInfoPublisher.getNumSubscribers() << std::endl;
   const unsigned char *colorImage = mCamera->getImage();
   sensor_msgs::Image image;
   image.header.stamp = ros::Time::now();
-  image.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    image.header.frame_id = mFrameOverride;
+  }
+  else {
+    image.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   image.height = mCamera->getHeight();
   image.width = mCamera->getWidth();
   image.encoding = sensor_msgs::image_encodings::BGRA8;
@@ -122,16 +136,62 @@ void RosCamera::publishValue(ros::Publisher publisher) {
   memcpy(&image.data[0], colorImage, sizeof(char) * 4 * mCamera->getWidth() * mCamera->getHeight());
 
   publisher.publish(image);
-
-  //TODO cmaeraInfo
 }
 
 void RosCamera::publishAuxiliaryValue() {
-  if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0) {
+  //CameraInfo
+  if (mCameraInfoPublisher.getNumSubscribers() > 0) {
+    sensor_msgs::CameraInfo info;
+    info.header.stamp = ros::Time::now();
+    if (mFrameOverride != "") {
+      info.header.frame_id = mFrameOverride;
+    }
+    else {
+      info.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+    }
+    info.width = mCamera->getWidth();
+    info.height = mCamera->getHeight();
+    info.distortion_model = "plumb_bob";
+    double hfov = mCamera->getFov();
+    double width = mCamera->getWidth();
+    double height = mCamera->getHeight();
+    double focal_length = mCamera->getFocalLength();
+    if (focal_length <= 0.0001) {
+      focal_length = width / (2.0 * tan(hfov/ 2.0)); //reference old plugin https://github.com/ros-simulation/gazebo_ros_pkgs/blob/noetic-devel/gazebo_plugins/src/gazebo_ros_camera_utils.cpp#L513
+    }
+    std::vector<double> D = {0.0, 0.0, 0.0, 0.0, 0.0};
+    info.D = D;
+    double fx, fy, cx, cy;
+    fx = focal_length;
+    fy = focal_length;
+    cx = (width + 1.0) / 2.0;
+    cy = (height + 1.0) / 2.0;
+    boost::array<double, 9> K = {fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0};
+    info.K = K;
+    boost::array<double, 9> R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}; //important for stereo though
+    info.R = R;
+    boost::array<double, 12> P = {fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0};
+    info.P = P;
+    info.binning_x = 0.0;
+    info.binning_y = 0.0;
+    info.roi.x_offset = 0;
+    info.roi.y_offset = 0;
+    info.roi.height = 0;
+    info.roi.width = 0;
+    info.roi.do_rectify = false;
+    mCameraInfoPublisher.publish(info);
+  }
+
+  if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0 && mRecognitionSegmentationPublisher.getNumSubscribers() > 0) {
     const CameraRecognitionObject *cameraObjects = mCamera->getRecognitionObjects();
     webots_ros::RecognitionObjects objects;
     objects.header.stamp = ros::Time::now();
-    objects.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName() + "/recognition_objects";
+    if (mFrameOverride != "") {
+      objects.header.frame_id = mFrameOverride;
+    }
+    else {
+      objects.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName() + "/recognition_objects";
+    }
     for (int i = 0; i < mCamera->getRecognitionNumberOfObjects(); ++i) {
       webots_ros::RecognitionObject object;
       object.position.x = cameraObjects[i].position[0];

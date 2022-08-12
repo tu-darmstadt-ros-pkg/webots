@@ -84,7 +84,12 @@ ros::Publisher RosJoystick::createPublisher(std::vector<std::string> *topics) {
 void RosJoystick::publishValue(ros::Publisher publisher) {
   webots_ros::Int32Stamped value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + "joystick";
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + "joystick";
+  }
   int button = mJoystick->getPressedButton();
   value.data = button;
   publisher.publish(value);
@@ -112,7 +117,12 @@ void RosJoystick::publishAuxiliaryValue() {
   // publish the axes value
   if (mAxesValuePublisher && axesNumber > 0) {
     for (int i = 0; i < axesNumber; ++i) {
-      value.header.frame_id = mFrameIdPrefix + "joystick";
+      if (mFrameOverride != "") {
+        value.header.frame_id = mFrameOverride;
+      }
+      else {
+        value.header.frame_id = mFrameIdPrefix + "joystick";
+      }
       value.data = mJoystick->getAxisValue(i);
       mAxesValuePublisher[i].publish(value);
     }
@@ -133,7 +143,12 @@ void RosJoystick::publishAuxiliaryValue() {
   // publish the point of views value
   if (mPovsValuePublisher && povsNumber > 0) {
     for (int i = 0; i < povsNumber; ++i) {
-      value.header.frame_id = mFrameIdPrefix + "joystick";
+      if (mFrameOverride != "") {
+        value.header.frame_id = mFrameOverride;
+      }
+      else {
+        value.header.frame_id = mFrameIdPrefix + "joystick";
+      }
       value.data = mJoystick->getPovValue(i);
       mPovsValuePublisher[i].publish(value);
     }

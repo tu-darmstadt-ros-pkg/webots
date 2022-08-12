@@ -65,7 +65,12 @@ ros::Publisher RosDistanceSensor::createPublisher(std::vector<std::string> *topi
 void RosDistanceSensor::publishValue(ros::Publisher publisher) {
   sensor_msgs::Range value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   if (mDistanceSensor->getType() == DistanceSensor::SONAR)
     value.radiation_type = 0;
   else if (mDistanceSensor->getType() == DistanceSensor::INFRA_RED)

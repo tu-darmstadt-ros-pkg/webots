@@ -15,6 +15,7 @@
 #include "RosRangeFinder.hpp"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/image_encodings.h"
+#include "sensor_msgs/CameraInfo.h"
 
 RosRangeFinder::RosRangeFinder(RangeFinder *range_finder, Ros *ros) : RosSensor(range_finder->getName(), range_finder, ros) {
   mRangeFinder = range_finder;
@@ -45,7 +46,7 @@ ros::Publisher RosRangeFinder::createPublisher(std::vector<std::string> *topics)
   
   if (topic_override) {
     createCameraInfoPublisher(topics->at(1), topic_override);
-  return createRangeImagePublisher(topics->at(0), true);
+    return createRangeImagePublisher(topics->at(0), true);
   }
   
   createCameraInfoPublisher("camera_info");
@@ -70,16 +71,30 @@ ros::Publisher RosRangeFinder::createRangeImagePublisher(const std::string &name
 }
 
 void RosRangeFinder::createCameraInfoPublisher(const std::string &name, bool override) {
-  //TODO
+  sensor_msgs::CameraInfo type;
+  if (override) {
+    mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(name, type);
+  }
+  else {
+    mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
+  }
 }
 
 // get image from the RangeFinder and publish it
 void RosRangeFinder::publishValue(ros::Publisher publisher) {
+  //std::cout << mCameraInfoPublisher.getTopic() << std::endl;
+  //std::cout << mCameraInfoPublisher.getNumSubscribers() << std::endl;
+
   const char *rangeImageVector;
   rangeImageVector = (const char *)(void *)mRangeFinder->getRangeImage();
   sensor_msgs::Image image;
   image.header.stamp = ros::Time::now();
-  image.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    image.header.frame_id = mFrameOverride;
+  }
+  else {
+    image.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   image.height = mRangeFinder->getHeight();
   image.width = mRangeFinder->getWidth();
   image.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
@@ -100,6 +115,48 @@ bool RosRangeFinder::getInfoCallback(webots_ros::range_finder_get_info::Request 
   res.minRange = mRangeFinder->getMinRange();
   res.maxRange = mRangeFinder->getMaxRange();
   return true;
+}
+
+void RosRangeFinder::publishAuxiliaryValue() {
+  if (mCameraInfoPublisher.getNumSubscribers() == 0) {
+    return;
+  }
+  sensor_msgs::CameraInfo info;
+  info.header.stamp = ros::Time::now();
+  if (mFrameOverride != "") {
+    info.header.frame_id = mFrameOverride;
+  }
+  else {
+    info.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
+  info.width = mRangeFinder->getWidth();
+  info.height = mRangeFinder->getHeight();
+  info.distortion_model = "plumb_bob";
+  double hfov = mRangeFinder->getFov();
+  double width = mRangeFinder->getWidth();
+  double height = mRangeFinder->getHeight();
+  double focal_length = width / (2.0 * tan(hfov/ 2.0)); //reference old plugin https://github.com/ros-simulation/gazebo_ros_pkgs/blob/noetic-devel/gazebo_plugins/src/gazebo_ros_camera_utils.cpp#L513
+  std::vector<double> D = {0.0, 0.0, 0.0, 0.0, 0.0};
+  info.D = D;
+  double fx, fy, cx, cy;
+  fx = focal_length;
+  fy = focal_length;
+  cx = (width + 1.0) / 2.0;
+  cy = (height + 1.0) / 2.0;
+  boost::array<double, 9> K = {fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0};
+  info.K = K;
+  boost::array<double, 9> R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}; //important for stereo though
+  info.R = R;
+  boost::array<double, 12> P = {fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0};
+  info.P = P;
+  info.binning_x = 0.0;
+  info.binning_y = 0.0;
+  info.roi.x_offset = 0;
+  info.roi.y_offset = 0;
+  info.roi.height = 0;
+  info.roi.width = 0;
+  info.roi.do_rectify = false;
+  mCameraInfoPublisher.publish(info);
 }
 
 bool RosRangeFinder::saveImageCallback(webots_ros::save_image::Request &req, webots_ros::save_image::Response &res) {

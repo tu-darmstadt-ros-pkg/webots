@@ -49,7 +49,12 @@ ros::Publisher RosInertialUnit::createPublisher(std::vector<std::string> *topics
 void RosInertialUnit::publishValue(ros::Publisher publisher) {
   sensor_msgs::Imu value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
 
   // switch roll and pitch axes because the Webots and ROS coordinate systems are not equivalent
   // https://stackoverflow.com/questions/56074321/quaternion-calculation-in-rosinertialunit-cpp-of-webots-ros-default-controller?answertab=oldest#tab-top

@@ -49,7 +49,12 @@ ros::Publisher RosAccelerometer::createPublisher(std::vector<std::string> *topic
 void RosAccelerometer::publishValue(ros::Publisher publisher) {
   sensor_msgs::Imu value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
+  }
   value.orientation.x = 0.0;
   value.orientation.y = 0.0;
   value.orientation.z = 0.0;

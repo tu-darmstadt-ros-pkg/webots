@@ -31,7 +31,7 @@ public:
   bool sensorEnableCallback(webots_ros::set_int::Request &req, webots_ros::set_int::Response &res);
   virtual bool samplingPeriodCallback(webots_ros::get_int::Request &req, webots_ros::get_int::Response &res);
   void publishValues(int step);
-  bool enableSensor(int timestep, std::vector<std::string> *topics=nullptr);
+  bool enableSensor(int timestep, std::vector<std::string> *topics=nullptr, std::string frame="");
 
 protected:
   RosSensor(std::string deviceName, Device *device, Ros *ros, bool enableDefaultServices = true);
@@ -51,6 +51,7 @@ protected:
 
   std::vector<publisherDetails> mPublishList;
   std::string mFrameIdPrefix;
+  std::string mFrameOverride;
 
 private:
   ros::ServiceServer mSensorEnableServer;

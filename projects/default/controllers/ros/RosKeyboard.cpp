@@ -41,7 +41,12 @@ ros::Publisher RosKeyboard::createPublisher(std::vector<std::string> *topics) {
 void RosKeyboard::publishValue(ros::Publisher publisher) {
   webots_ros::Int32Stamped value;
   value.header.stamp = ros::Time::now();
-  value.header.frame_id = mFrameIdPrefix + "keyboard";
+  if (mFrameOverride != "") {
+    value.header.frame_id = mFrameOverride;
+  }
+  else {
+    value.header.frame_id = mFrameIdPrefix + "keyboard";
+  }
   int key = mKeyboard->getKey();
   while (key >= 0) {
     value.data = key;
