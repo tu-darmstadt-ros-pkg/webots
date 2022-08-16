@@ -17,6 +17,7 @@
 
 #include <webots/Camera.hpp>
 #include "RosSensor.hpp"
+#include "image_transport/image_transport.h"
 
 #include <webots_ros/camera_get_focus_info.h>
 #include <webots_ros/camera_get_info.h>
@@ -58,17 +59,25 @@ public:
   void rosDisable() override { cleanup(); }
   int rosSamplingPeriod() override { return mCamera->getSamplingPeriod(); }
 
+  void enableImageTransport();
+
 private:
   ros::Publisher createImagePublisher(const std::string &name, bool override=false);
   void createCameraInfoPublisher(const std::string &name, bool override=false);
   void cleanup() { mCamera->disable(); }
+  sensor_msgs::Image createImageMsg();
+  sensor_msgs::CameraInfo createCameraInfoMsg();
 
   bool mIsRecognitionSegmentationEnabled;
+
+  bool mUseImageTransport;
+  std::string mImageTopic;
 
   Camera *mCamera;
   ros::Publisher mRecognitionObjectsPublisher;
   ros::Publisher mRecognitionSegmentationPublisher;
   ros::Publisher mCameraInfoPublisher;
+  image_transport::Publisher mImagePub;
   ros::ServiceServer mInfoServer;
   ros::ServiceServer mFocusInfoServer;
   ros::ServiceServer mZoomInfoServer;

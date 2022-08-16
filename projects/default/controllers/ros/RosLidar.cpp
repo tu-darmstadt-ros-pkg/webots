@@ -59,15 +59,15 @@ ros::Publisher RosLidar::createPublisher(std::vector<std::string> *topics) {
   if (topics != nullptr) {
     if (topics->size() > 2) {
       topic_override = true;
-    }
-    //directly enable point cloud, if provided with topic
-    else if (topics->size() == 3 && topics->at(2) != "") {
-      mPointCloudTopic = topics->at(2);
-      mIsPointCloudEnabled = true;
-      std::string deviceNameFixed = RosDevice::fixedDeviceName();
-      sensor_msgs::PointCloud2 type;
-      mPointCloudPublisher = RosDevice::rosAdvertiseTopic(mPointCloudTopic, type);
-      mLidar->enablePointCloud();
+      //directly enable point cloud, if provided with topic
+      if (topics->size() == 3 && topics->at(2) != "") {
+        mPointCloudTopic = topics->at(2);
+        mIsPointCloudEnabled = true;
+        std::string deviceNameFixed = RosDevice::fixedDeviceName();
+        sensor_msgs::PointCloud2 type;
+        mPointCloudPublisher = RosDevice::rosAdvertiseTopic(mPointCloudTopic, type);
+        mLidar->enablePointCloud();
+      }
     }
     else {
       std::cerr << "Invalid amount of topics provided for Lidar " << RosDevice::fixedDeviceName() << std::endl;

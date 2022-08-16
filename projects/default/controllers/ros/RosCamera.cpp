@@ -20,6 +20,8 @@
 #include "webots_ros/RecognitionObject.h"
 #include "webots_ros/RecognitionObjects.h"
 
+
+
 RosCamera::RosCamera(Camera *camera, Ros *ros) : RosSensor(camera->getName(), camera, ros) {
   mIsRecognitionSegmentationEnabled = false;
 
@@ -52,6 +54,8 @@ RosCamera::RosCamera(Camera *camera, Ros *ros) : RosSensor(camera->getName(), ca
       fixedDeviceName + "/recognition_is_segmentation_enabled", &RosCamera::isRecognitionSegmentationEnabledCallback);
     mSaveRecognitionSegmentationImageServer = RosDevice::rosAdvertiseService(
       fixedDeviceName + "/recognition_save_segmentation_image", &RosCamera::saveRecognitionSegmentationImageCallback);
+
+    mUseImageTransport = false;
   }
 }
 
@@ -72,6 +76,11 @@ RosCamera::~RosCamera() {
     mRecognitionSegmentationPublisher.shutdown();
   }
   cleanup();
+
+  if (mUseImageTransport) {
+    mImagePub.shutdown();
+  }
+  mCameraInfoPublisher.shutdown();
 }
 
 // creates a publisher for camera image with
@@ -98,8 +107,12 @@ ros::Publisher RosCamera::createImagePublisher(const std::string &name, bool ove
   // type.is_bigendian = 0;
   type.step = sizeof(char) * 4 * mCamera->getWidth();
   if (override) {
+    mImageTopic = name;
     return RosDevice::rosAdvertiseTopic(name, type);
+    //image_transport::ImageTransport it(mRos->nodeHandle());
+    //return it.advertise(name, 1);
   }
+  mImageTopic = RosDevice::fixedDeviceName() + "/" + name;
   return RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
 }
 
@@ -115,8 +128,15 @@ void RosCamera::createCameraInfoPublisher(const std::string &name, bool override
 
 // get image from the Camera and publish it
 void RosCamera::publishValue(ros::Publisher publisher) {
-  std::cout << mCameraInfoPublisher.getTopic() << std::endl;
-  std::cout << mCameraInfoPublisher.getNumSubscribers() << std::endl;
+  if (mUseImageTransport) {
+    return;
+  }
+  
+  
+  publisher.publish(createImageMsg());
+}
+
+sensor_msgs::Image RosCamera::createImageMsg() {
   const unsigned char *colorImage = mCamera->getImage();
   sensor_msgs::Image image;
   image.header.stamp = ros::Time::now();
@@ -134,14 +154,11 @@ void RosCamera::publishValue(ros::Publisher publisher) {
 
   image.data.resize(4 * mCamera->getWidth() * mCamera->getHeight());
   memcpy(&image.data[0], colorImage, sizeof(char) * 4 * mCamera->getWidth() * mCamera->getHeight());
-
-  publisher.publish(image);
+  return image;
 }
 
-void RosCamera::publishAuxiliaryValue() {
-  //CameraInfo
-  if (mCameraInfoPublisher.getNumSubscribers() > 0) {
-    sensor_msgs::CameraInfo info;
+sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
+  sensor_msgs::CameraInfo info;
     info.header.stamp = ros::Time::now();
     if (mFrameOverride != "") {
       info.header.frame_id = mFrameOverride;
@@ -179,7 +196,18 @@ void RosCamera::publishAuxiliaryValue() {
     info.roi.height = 0;
     info.roi.width = 0;
     info.roi.do_rectify = false;
-    mCameraInfoPublisher.publish(info);
+
+    return info;
+}
+
+void RosCamera::publishAuxiliaryValue() {
+  //imageTransport
+  if (mUseImageTransport && mImagePub.getNumSubscribers() > 0) {
+    mImagePub.publish(createImageMsg());
+  }
+  //CameraInfo
+  if (mCameraInfoPublisher.getNumSubscribers() > 0) {
+    mCameraInfoPublisher.publish(createCameraInfoMsg());
   }
 
   if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0 && mRecognitionSegmentationPublisher.getNumSubscribers() > 0) {
@@ -368,4 +396,12 @@ bool RosCamera::saveRecognitionSegmentationImageCallback(webots_ros::save_image:
   assert(mCamera);
   res.success = 1 + mCamera->saveRecognitionSegmentationImage(req.filename, req.quality);
   return true;
+}
+
+//this is not the cleanest way right now
+void RosCamera::enableImageTransport() {
+  mUseImageTransport = true;
+
+  image_transport::ImageTransport it(*mRos->nodeHandle());
+  mImagePub = it.advertise(mImageTopic, 1);
 }

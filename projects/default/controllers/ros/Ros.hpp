@@ -61,7 +61,7 @@ protected:
   virtual int step(int duration) { return mRobot->step(duration); }
   Robot *mRobot;
 
-  bool enableSensor(const std::string name, double rate = -1.0, std::vector<std::string> *topics=nullptr, std::string frame="");
+  RosSensor* enableSensor(const std::string name, double rate = -1.0, std::vector<std::string> *topics=nullptr, std::string frame="");
   bool enableRosControl(const std::string name_space);
 
 private:

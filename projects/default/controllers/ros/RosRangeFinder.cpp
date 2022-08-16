@@ -22,12 +22,19 @@ RosRangeFinder::RosRangeFinder(RangeFinder *range_finder, Ros *ros) : RosSensor(
   std::string fixedDeviceName = RosDevice::fixedDeviceName();
   mInfoServer = RosDevice::rosAdvertiseService(fixedDeviceName + "/get_info", &RosRangeFinder::getInfoCallback);
   mImageServer = RosDevice::rosAdvertiseService(fixedDeviceName + "/save_image", &RosRangeFinder::saveImageCallback);
+
+  mUseImageTransport = false;
 }
 
 RosRangeFinder::~RosRangeFinder() {
   mInfoServer.shutdown();
   mImageServer.shutdown();
   cleanup();
+
+  if (mUseImageTransport) {
+    mImagePub.shutdown();
+  }
+  mCameraInfoPublisher.shutdown();
 }
 
 // creates a publisher for range_finder image with
@@ -82,9 +89,14 @@ void RosRangeFinder::createCameraInfoPublisher(const std::string &name, bool ove
 
 // get image from the RangeFinder and publish it
 void RosRangeFinder::publishValue(ros::Publisher publisher) {
-  //std::cout << mCameraInfoPublisher.getTopic() << std::endl;
-  //std::cout << mCameraInfoPublisher.getNumSubscribers() << std::endl;
+  if (mUseImageTransport) {
+    return;
+  }
+  
+  publisher.publish(createImageMsg());
+}
 
+sensor_msgs::Image RosRangeFinder::createImageMsg() {
   const char *rangeImageVector;
   rangeImageVector = (const char *)(void *)mRangeFinder->getRangeImage();
   sensor_msgs::Image image;
@@ -102,8 +114,7 @@ void RosRangeFinder::publishValue(ros::Publisher publisher) {
 
   image.data.resize(sizeof(float) * mRangeFinder->getWidth() * mRangeFinder->getHeight());
   memcpy(&image.data[0], rangeImageVector, sizeof(float) * mRangeFinder->getWidth() * mRangeFinder->getHeight());
-
-  publisher.publish(image);
+  return image;
 }
 
 bool RosRangeFinder::getInfoCallback(webots_ros::range_finder_get_info::Request &req,
@@ -117,10 +128,7 @@ bool RosRangeFinder::getInfoCallback(webots_ros::range_finder_get_info::Request 
   return true;
 }
 
-void RosRangeFinder::publishAuxiliaryValue() {
-  if (mCameraInfoPublisher.getNumSubscribers() == 0) {
-    return;
-  }
+sensor_msgs::CameraInfo RosRangeFinder::createCameraInfoMsg() {
   sensor_msgs::CameraInfo info;
   info.header.stamp = ros::Time::now();
   if (mFrameOverride != "") {
@@ -156,11 +164,30 @@ void RosRangeFinder::publishAuxiliaryValue() {
   info.roi.height = 0;
   info.roi.width = 0;
   info.roi.do_rectify = false;
-  mCameraInfoPublisher.publish(info);
+
+  return info;
+}
+
+void RosRangeFinder::publishAuxiliaryValue() {
+  if (mCameraInfoPublisher.getNumSubscribers() > 0) {
+    mCameraInfoPublisher.publish(createCameraInfoMsg());
+  }
+
+  if (mUseImageTransport && mImagePub.getNumSubscribers() > 0) {
+    mImagePub.publish(createImageMsg());
+  }
 }
 
 bool RosRangeFinder::saveImageCallback(webots_ros::save_image::Request &req, webots_ros::save_image::Response &res) {
   assert(mRangeFinder);
   res.success = 1 + mRangeFinder->saveImage(req.filename, req.quality);
   return true;
+}
+
+//this is not the cleanest way right now
+void RosRangeFinder::enableImageTransport() {
+  mUseImageTransport = true;
+
+  image_transport::ImageTransport it(*mRos->nodeHandle());
+  mImagePub = it.advertise(mRangeTopic, 1);
 }

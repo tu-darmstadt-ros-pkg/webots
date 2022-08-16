@@ -19,6 +19,8 @@
 #include <webots_ros/save_image.h>
 #include <webots/RangeFinder.hpp>
 #include "RosSensor.hpp"
+#include "image_transport/image_transport.h"
+
 
 using namespace webots;
 
@@ -37,10 +39,16 @@ public:
   void rosDisable() override { cleanup(); }
   int rosSamplingPeriod() override { return mRangeFinder->getSamplingPeriod(); }
 
+  void enableImageTransport();
+  
 private:
   void cleanup() { mRangeFinder->disable(); }
   ros::Publisher createRangeImagePublisher(const std::string &name, bool override=false);
   void createCameraInfoPublisher(const std::string &name, bool override=false);
+  sensor_msgs::Image createImageMsg();
+  sensor_msgs::CameraInfo createCameraInfoMsg();
+  bool mUseImageTransport;
+  image_transport::Publisher mImagePub;
 
   ros::Publisher mCameraInfoPublisher;
   RangeFinder *mRangeFinder;
