@@ -160,6 +160,10 @@ sensor_msgs::Image RosCamera::createImageMsg() {
 sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
   sensor_msgs::CameraInfo info;
     info.header.stamp = ros::Time::now();
+
+    double width = mCamera->getWidth();
+    double height = mCamera->getHeight();
+    
     if (mFrameOverride != "") {
       info.header.frame_id = mFrameOverride;
     }
@@ -168,14 +172,12 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
     }
     info.width = mCamera->getWidth();
     info.height = mCamera->getHeight();
-    info.distortion_model = "plumb_bob";
+
     double hfov = mCamera->getFov();
-    double width = mCamera->getWidth();
-    double height = mCamera->getHeight();
-    double focal_length = mCamera->getFocalLength();
-    if (focal_length <= 0.0001) {
-      focal_length = width / (2.0 * tan(hfov/ 2.0)); //reference old plugin https://github.com/ros-simulation/gazebo_ros_pkgs/blob/noetic-devel/gazebo_plugins/src/gazebo_ros_camera_utils.cpp#L513
-    }
+    double focal_length = width / (2.0 * tan(hfov/ 2.0));
+    
+    //set distortion model from lens
+    info.distortion_model = "plumb_bob";
     std::vector<double> D = {0.0, 0.0, 0.0, 0.0, 0.0};
     info.D = D;
     double fx, fy, cx, cy;
