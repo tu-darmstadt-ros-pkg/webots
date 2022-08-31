@@ -54,8 +54,6 @@ class WbMFRotation;
 class WbMFNode;
 class WbWriter;
 
-struct aiMaterial;
-
 class WbNode : public QObject {
   Q_OBJECT
 
@@ -272,6 +270,7 @@ public:
   // export
   virtual void exportBoundingObjectToX3D(WbWriter &writer) const {}
   virtual QStringList fieldsToSynchronizeWithX3D() const { return QStringList(); }
+  virtual void fixMissingResources() const {}
 
   virtual void reset(const QString &id);
   virtual void save(const QString &id) {}
@@ -302,7 +301,7 @@ protected:
   WbNode(const WbNode &other);
 
   // constructor for shallow nodes, should be used exclusively by the CadShape node
-  WbNode(const QString &modelName, const aiMaterial *material);
+  explicit WbNode(const QString &modelName);
   bool mIsShallowNode;
 
   // DEF-USE dictionary
