@@ -53,7 +53,7 @@ WbProtoModel::WbProtoModel(WbTokenizer *tokenizer, const QString &worldPath, con
   mInfo.clear();
   const QString &tokenizerInfo = tokenizer->info();
   if (!tokenizerInfo.isEmpty() && !tokenizerInfo.trimmed().isEmpty()) {
-    const QStringList info = tokenizerInfo.split("\n");  // .wrl # comments
+    const QStringList info = tokenizerInfo.split("\n");  // # comments
     for (int i = 0; i < info.size(); ++i) {
       if (!info.at(i).startsWith("tags:") && !info.at(i).startsWith("license:") && !info.at(i).startsWith("license url:") &&
           !info.at(i).startsWith("documentation url:") && !info.at(i).startsWith("template language:"))
@@ -346,8 +346,8 @@ WbNode *WbProtoModel::generateRoot(const QVector<WbField *> &parameters, const Q
 
   int rootUniqueId = -1;
   QString content = mContent;
-  QString key;
   if (mTemplate) {
+    QString key;
     if (mIsDeterministic) {
       foreach (WbField *parameter, parameters) {
         if (parameter->isTemplateRegenerator()) {
@@ -358,7 +358,6 @@ WbNode *WbProtoModel::generateRoot(const QVector<WbField *> &parameters, const Q
         }
       }
     }
-
     if (!mIsDeterministic || (!mDeterministicContentMap.contains(key) || mDeterministicContentMap.value(key).isEmpty())) {
       WbProtoTemplateEngine te(mContent);
       rootUniqueId = uniqueId >= 0 ? uniqueId : WbNode::getFreeUniqueId();
@@ -406,7 +405,7 @@ WbNode *WbProtoModel::generateRoot(const QVector<WbField *> &parameters, const Q
   // aliasing error reports are based on the header, so the error offset has no sense here
   tokenizer.setErrorOffset(0);
 
-  verifyAliasing(root, &tokenizer);
+  setupAliasing(root, &tokenizer);
 
   if (mTemplate) {
     root->setProtoInstanceTemplateContent(content.toUtf8());
@@ -481,15 +480,8 @@ QStringList WbProtoModel::parameterNames() const {
   return names;
 }
 
-void WbProtoModel::setIsTemplate(bool value) {
-  mTemplate = value;
-  if (mTemplate && mIsDeterministic) {  // if ancestor is nonDeterministic this proto can't be either
-    mIsDeterministic = mAncestorProtoModel->isDeterministic();
-  }
-}
-
-void WbProtoModel::verifyNodeAliasing(WbNode *node, WbFieldModel *param, WbTokenizer *tokenizer, bool searchInParameters,
-                                      bool &ok) const {
+void WbProtoModel::setupNodeAliasing(WbNode *node, WbFieldModel *param, WbTokenizer *tokenizer, bool searchInParameters,
+                                     bool &ok) {
   QVector<WbField *> fields;
   if (searchInParameters)
     fields = node->parameters();
@@ -499,9 +491,10 @@ void WbProtoModel::verifyNodeAliasing(WbNode *node, WbFieldModel *param, WbToken
   // search self
   foreach (WbField *field, fields) {
     if (field->alias() == param->name()) {
-      if (field->type() == param->type())
+      if (field->type() == param->type()) {
+        mParameterAliases.insert(field->name(), field->alias());
         ok = true;
-      else
+      } else
         tokenizer->reportError(
           tr("Type mismatch between '%1' PROTO parameter and field '%2'").arg(param->name(), field->name()),
           param->nameToken());
@@ -513,14 +506,14 @@ void WbProtoModel::verifyNodeAliasing(WbNode *node, WbFieldModel *param, WbToken
   foreach (WbNode *subnode, l) {
     if (subnode->isProtoInstance())
       // search only in parameters of sub protos: fields are in sub proto parameter scope
-      verifyNodeAliasing(subnode, param, tokenizer, true, ok);
+      setupNodeAliasing(subnode, param, tokenizer, true, ok);
     else
-      verifyNodeAliasing(subnode, param, tokenizer, false, ok);
+      setupNodeAliasing(subnode, param, tokenizer, false, ok);
   }
 }
 
-// verify that each proto parameter has at least one matching IS parameter
-void WbProtoModel::verifyAliasing(WbNode *root, WbTokenizer *tokenizer) const {
+// setup that each proto parameter has at least one matching IS parameter
+void WbProtoModel::setupAliasing(WbNode *root, WbTokenizer *tokenizer) {
   if (!root)
     return;
 
@@ -528,7 +521,7 @@ void WbProtoModel::verifyAliasing(WbNode *root, WbTokenizer *tokenizer) const {
     if (param->isUnconnected())
       continue;
     bool ok = false;
-    verifyNodeAliasing(root, param, tokenizer, isDerived(), ok);
+    setupNodeAliasing(root, param, tokenizer, isDerived(), ok);
     if (!isTemplate() && !ok)
       tokenizer->reportError(tr("PROTO parameter '%1' has no matching IS field").arg(param->name()), param->nameToken());
   }
@@ -607,7 +600,7 @@ bool WbProtoModel::checkIfDocumentationPageExist(const QString &page) const {
 
 const QString WbProtoModel::diskPath() const {
   if (WbUrl::isWeb(mUrl))
-    return WbNetwork::get(mUrl);
+    return WbNetwork::instance()->get(mUrl);
 
   return mUrl;
 }

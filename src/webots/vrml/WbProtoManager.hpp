@@ -19,6 +19,7 @@
 // Description: a class for managing a list of proto models
 //
 
+class WbNode;
 class WbProtoModel;
 class WbTokenizer;
 class WbDownloader;
@@ -128,6 +129,8 @@ public:
   // WbInsertExternProtoDialog) to categorize their respective PROTO
   enum { BASE_NODE = 10001, PROTO_WORLD = 10002, PROTO_PROJECT = 10003, PROTO_EXTRA = 10004, PROTO_WEBOTS = 10005 };
 
+  void setImportedFromSupervisor(bool value) { mImportedFromSupervisor = value; };
+
   // given a category and a PROTO name, it returns the URL from the corresponding list
   QString protoUrl(const QString &protoName, int category) const;
   // tests if the PROTO of the provided name exists in the specified category
@@ -143,9 +146,6 @@ public:
 
   WbProtoModel *readModel(const QString &url, const QString &worldPath, const QString &prefix = QString(),
                           const QStringList &baseTypeList = QStringList()) const;
-
-  // read a proto model and place it in this list
-  void readModel(WbTokenizer *tokenizer, const QString &worldPath);
 
   // PROTO retriever for world files
   void retrieveExternProto(const QString &filename, bool reloading);
@@ -172,9 +172,6 @@ public:
   // lists the existing PROTO in the primary project locations
   QStringList listProtoInCategory(int category) const;
 
-  // exports a copy of a selected PROTO to the current project directory
-  void exportProto(const QString &path, const QString &destination);
-
   // list of all EXTERNPROTO (both importable and not), stored in a QVector as order matters when saving to file
   const QVector<WbExternProto *> &externProto() const { return mExternProto; };
 
@@ -182,14 +179,17 @@ public:
   const WbExternProto *externProtoCutBuffer() const { return mExternProtoCutBuffer; };
 
   // EXTERNPROTO manipulators
-  void declareExternProto(const QString &protoName, const QString &protoPath, bool importable, bool updateContents,
-                          bool isFromRootNodeConversion = false);
-  QString externProtoDeclaration(const QString &protoName, bool formatted = false) const;
+  // declares EXTERNPROTO and returns the previous URL if is another PROTO with the same model if already declared
+  QString declareExternProto(const QString &protoName, const QString &protoPath, bool importable, bool updateContents,
+                             bool forceUpdate = true);
+  void purgeUnusedExternProtoDeclarations(const QSet<QString> &protoNamesInUse);
+  QString externProtoUrl(const WbNode *node, bool formatted = false) const;
+  QString removeProtoUrl(const WbNode *node, bool formatted = false) const;
   void saveToExternProtoCutBuffer(const QString &protoName);
 
+  QString findExternProtoDeclarationInFile(const QString &url, const QString &modelName);
   void removeImportableExternProto(const QString &protoName);
 
-  void purgeUnusedExternProtoDeclarations();
   void clearExternProtoCutBuffer();
   bool isImportableExternProtoDeclared(const QString &protoName);
 
@@ -216,6 +216,8 @@ private:
   QString mRetrievalError;
   QString mCurrentWorld;
   bool mReloading;
+
+  bool mImportedFromSupervisor;
 
   WbProtoTreeItem *mTreeRoot;
 
@@ -248,7 +250,6 @@ private:
 
   void loadWebotsProtoMap();
 
-  QString findExternProtoDeclarationInFile(const QString &url, const QString &modelName);
   QString injectDeclarationByBackwardsCompatibility(const QString &modelName);
 
   QMap<QString, QString> undeclaredProtoNodes(const QString &filename);
