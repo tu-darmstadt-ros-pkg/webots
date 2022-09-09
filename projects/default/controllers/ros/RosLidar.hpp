@@ -27,6 +27,9 @@
 #include <webots_ros/lidar_get_layer_range_image.h>
 #include <webots_ros/node_get_status.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosLidar : public RosSensor {
@@ -34,7 +37,7 @@ public:
   RosLidar(Lidar *lidar, Ros *ros);
   virtual ~RosLidar();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool enablePointCloudCallback(webots_ros::set_bool::Request &req, webots_ros::set_bool::Response &res);

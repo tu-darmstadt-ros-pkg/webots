@@ -28,24 +28,16 @@ RosGyro::~RosGyro() {
 }
 
 // creates a publisher for Gyro values with a sensor_msgs/Imu as message type
-ros::Publisher RosGyro::createPublisher(std::vector<std::string> *topics) {
-
-  bool topic_override = false;
+ros::Publisher RosGyro::createPublisher(std::map<std::string, std::string> *topics) {
+  std::string topicName = RosDevice::fixedDeviceName() + "/values";
   if (topics != nullptr) {
-    if (topics->size() == 1) {
-      topic_override = true;
-    }
-    else {
-      std::cerr << "Invalid amount of topics provided for Gyro " << RosDevice::fixedDeviceName() << std::endl;
+    if (topics->find("values") != topics->end()) {
+      topicName = topics->at("values");
     }
   }
 
   sensor_msgs::Imu type;
-  std::string topicName = RosDevice::fixedDeviceName() + "/values";
-  if (topic_override) {
-    topicName = topics->at(0);
-  }
-  
+
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

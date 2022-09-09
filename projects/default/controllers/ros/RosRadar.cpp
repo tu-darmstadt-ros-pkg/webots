@@ -33,23 +33,26 @@ RosRadar::~RosRadar() {
 }
 
 // creates a publisher for radar targets with a {RadarTarget} as message type
-ros::Publisher RosRadar::createPublisher(std::vector<std::string> *topics) {
+ros::Publisher RosRadar::createPublisher(std::map<std::string, std::string> *topics) {
   std::string deviceNameFixed = RosDevice::fixedDeviceName();
   webots_ros::Int8Stamped targetsNumberType;
-  mTargetsNumberPublisher = RosDevice::rosAdvertiseTopic(deviceNameFixed + "/number_of_targets", targetsNumberType);
+  std::string targetsNumberTopicName = RosDevice::fixedDeviceName() + "/number_of_targets";
 
   webots_ros::RadarTarget type;
   std::string topicName = deviceNameFixed + "/targets";
 
+  std::string targetsTopicName = RosDevice::fixedDeviceName() + "/targets";
   if (topics != nullptr) {
-    if (topics->size() == 1) {
-      RosDevice::rosAdvertiseTopic(topics->at(0), type);
+    if (topics->find("number_of_targets") != topics->end()) {
+      targetsNumberTopicName = topics->at("number_of_targets");
     }
-    else {
-      std::cerr << "Invalid amount of topics provided for Radar " << RosDevice::fixedDeviceName() << std::endl;
+
+    if (topics->find("targets") != topics->end()) {
+      targetsTopicName = topics->at("targets");
     }
   }
 
+  mTargetsNumberPublisher = RosDevice::rosAdvertiseTopic(targetsNumberTopicName, targetsNumberType);
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

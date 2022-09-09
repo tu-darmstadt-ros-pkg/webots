@@ -21,6 +21,9 @@
 #include "RosSensor.hpp"
 #include "image_transport/image_transport.h"
 
+#include <map>
+#include <string>
+
 
 using namespace webots;
 
@@ -29,7 +32,7 @@ public:
   RosRangeFinder(RangeFinder *range_finder, Ros *ros);
   virtual ~RosRangeFinder();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool getInfoCallback(webots_ros::range_finder_get_info::Request &req, webots_ros::range_finder_get_info::Response &res);

@@ -18,6 +18,9 @@
 #include <webots/Altimeter.hpp>
 #include "RosSensor.hpp"
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosAltimeter : public RosSensor {
@@ -25,7 +28,7 @@ public:
   RosAltimeter(Altimeter *altimeter, Ros *ros);
   virtual ~RosAltimeter();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mAltimeter->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

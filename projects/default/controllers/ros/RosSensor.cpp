@@ -43,7 +43,7 @@ bool RosSensor::sensorEnableCallback(webots_ros::set_int::Request &req, webots_r
   return true;
 }
 
-bool RosSensor::enableSensor(int timestep, std::vector<std::string>* topics, std::string frame) {
+bool RosSensor::enableSensor(int timestep, std::map<std::string, std::string>* topics, std::string frame) {
   if (frame != "") {
     mFrameOverride = frame;
   }

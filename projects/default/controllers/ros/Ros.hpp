@@ -15,6 +15,7 @@
 #ifndef ROS_HPP
 #define ROS_HPP
 
+
 #include <ros/node_handle.h>
 #include <webots/Robot.hpp>
 
@@ -30,7 +31,11 @@
 #include <webots_ros/robot_set_mode.h>
 #include <webots_ros/robot_wait_for_user_input_event.h>
 
+#include <map>
+
 #include <highlevel/RosControl.hpp>
+
+
 
 using namespace webots;
 
@@ -61,7 +66,7 @@ protected:
   virtual int step(int duration) { return mRobot->step(duration); }
   Robot *mRobot;
 
-  RosSensor* enableSensor(const std::string name, double rate = -1.0, std::vector<std::string> *topics=nullptr, std::string frame="");
+  RosSensor* enableSensor(const std::string name, double rate = -1.0, std::map<std::string, std::string> *topics=nullptr, std::string frame="");
   bool enableRosControl(const std::string name_space);
 
 private:

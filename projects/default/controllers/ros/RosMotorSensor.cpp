@@ -21,7 +21,7 @@ RosMotorSensor::RosMotorSensor(Motor *motor, const std::string &sensorName, Ros 
 }
 
 // creates a publisher for motor sensor values with a {double} as message
-ros::Publisher RosMotorSensor::createPublisher(std::vector<std::string> *topics) {
+ros::Publisher RosMotorSensor::createPublisher(std::map<std::string, std::string> *topics) {
   webots_ros::Float64Stamped type;
   std::string topicName;
   if (mMotor->getType() == Motor::LINEAR)
@@ -30,10 +30,9 @@ ros::Publisher RosMotorSensor::createPublisher(std::vector<std::string> *topics)
     topicName = RosDevice::fixedDeviceName() + "/torque_feedback";
 
   if (topics != nullptr) {
-    if (topics->size() == 1) {
-      return RosDevice::rosAdvertiseTopic(topics->at(0), type);
+    if (topics->find("motor") != topics->end()) {
+      topicName = topics->at("motor");
     }
-    std::cerr << "Invalid amount of topics provided for MotorSensor " << RosDevice::fixedDeviceName() << std::endl;
   }
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }

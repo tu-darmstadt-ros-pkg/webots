@@ -18,6 +18,9 @@
 #include <webots/Keyboard.hpp>
 #include "RosSensor.hpp"
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosKeyboard : public RosSensor {
@@ -25,7 +28,7 @@ public:
   RosKeyboard(Keyboard *keyboard, Ros *ros);
   virtual ~RosKeyboard() { cleanup(); }
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mKeyboard->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

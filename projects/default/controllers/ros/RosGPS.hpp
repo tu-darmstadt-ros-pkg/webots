@@ -22,6 +22,9 @@
 
 #include <webots_ros/gps_decimal_degrees_to_degrees_minutes_seconds.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosGPS : public RosSensor {
@@ -29,7 +32,7 @@ public:
   RosGPS(GPS *gps, Ros *ros);
   virtual ~RosGPS();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishAuxiliaryValue() override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mGPS->enable(samplingPeriod); }

@@ -22,6 +22,9 @@
 #include <webots_ros/get_float_array.h>
 #include <webots_ros/get_int.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosDistanceSensor : public RosSensor {
@@ -29,7 +32,7 @@ public:
   RosDistanceSensor(DistanceSensor *distanceSensor, Ros *ros);
   virtual ~RosDistanceSensor();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mDistanceSensor->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

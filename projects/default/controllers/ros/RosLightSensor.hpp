@@ -20,6 +20,9 @@
 
 #include <webots_ros/get_float_array.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosLightSensor : public RosSensor {
@@ -27,7 +30,7 @@ public:
   RosLightSensor(LightSensor *lightSensor, Ros *ros);
   virtual ~RosLightSensor();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mLightSensor->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

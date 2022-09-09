@@ -73,28 +73,52 @@ RosCamera::~RosCamera() {
     mRecognitionEnableServer.shutdown();
     mRecognitionSamplingPeriodServer.shutdown();
     mRecognitionObjectsPublisher.shutdown();
-    mRecognitionSegmentationPublisher.shutdown();
+    if (mUseImageTransport) {
+      mItRecognitionSegmentationPublisher.shutdown();
+    } else {
+      mRecognitionSegmentationPublisher.shutdown();
+    }
   }
   cleanup();
 
   if (mUseImageTransport) {
-    mImagePub.shutdown();
+    mItImagePub.shutdown();
   }
   mCameraInfoPublisher.shutdown();
 }
 
 // creates a publisher for camera image with
 // a [4 x ImageWidth x ImageHeight] {unsigned char} array
-ros::Publisher RosCamera::createPublisher(std::vector<std::string> *topics) {
+ros::Publisher RosCamera::createPublisher(std::map<std::string, std::string> *topics) {
   if (topics != nullptr) {
-    if (topics->size() == 2) {
-      createCameraInfoPublisher(topics->at(1), true);
-      return createImagePublisher(topics->at(0), true);
+    if (topics->find("recognition") != topics->end()) {
+      mCamera->recognitionEnable(true);
+      enableRecognitionPublisher(topics->at("recognition"), true);
     }
-    else {
-      std::cerr << "Invalid amount of topics provided for camera " << RosDevice::fixedDeviceName() << std::endl;
+
+    if (topics->find("segmentation") != topics->end()) {
+      if (!mCamera->hasRecognition()) {
+        mCamera->recognitionEnable(true);
+        enableRecognitionPublisher("recognition_objects");
+      }
+      enableRecognitionSegmentation(topics->at("segmentation"), true);
+    }
+
+    if (topics->find("camera_info")!= topics->end()) {
+      createCameraInfoPublisher(topics->at("camera_info"), true);
+    } else {
+      createCameraInfoPublisher("camera_info");
+    }
+
+    if (topics->find("image")!= topics->end()) {
+      mImageTopic = topics->at("image");
+      return createImagePublisher(topics->at("image"), true);
+    } else {
+      mImageTopic = RosDevice::fixedDeviceName() + "/image";
+      return createImagePublisher("image");
     }
   }
+
   createCameraInfoPublisher("camera_info");
   return createImagePublisher("image");
 }
@@ -109,8 +133,6 @@ ros::Publisher RosCamera::createImagePublisher(const std::string &name, bool ove
   if (override) {
     mImageTopic = name;
     return RosDevice::rosAdvertiseTopic(name, type);
-    //image_transport::ImageTransport it(mRos->nodeHandle());
-    //return it.advertise(name, 1);
   }
   mImageTopic = RosDevice::fixedDeviceName() + "/" + name;
   return RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
@@ -120,8 +142,7 @@ void RosCamera::createCameraInfoPublisher(const std::string &name, bool override
   sensor_msgs::CameraInfo type;
   if (override) {
     mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(name, type);
-  }
-  else {
+  } else {
     mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
   }
 }
@@ -131,8 +152,7 @@ void RosCamera::publishValue(ros::Publisher publisher) {
   if (mUseImageTransport) {
     return;
   }
-  
-  
+
   publisher.publish(createImageMsg());
 }
 
@@ -204,15 +224,15 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
 
 void RosCamera::publishAuxiliaryValue() {
   //imageTransport
-  if (mUseImageTransport && mImagePub.getNumSubscribers() > 0) {
-    mImagePub.publish(createImageMsg());
+  if (mUseImageTransport && mItImagePub.getNumSubscribers() > 0) {
+    mItImagePub.publish(createImageMsg());
   }
   //CameraInfo
   if (mCameraInfoPublisher.getNumSubscribers() > 0) {
     mCameraInfoPublisher.publish(createCameraInfoMsg());
   }
 
-  if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0 && mRecognitionSegmentationPublisher.getNumSubscribers() > 0) {
+  if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0 && (mRecognitionSegmentationPublisher.getNumSubscribers() > 0 || mItRecognitionSegmentationPublisher.getNumSubscribers() > 0)) {
     const CameraRecognitionObject *cameraObjects = mCamera->getRecognitionObjects();
     webots_ros::RecognitionObjects objects;
     objects.header.stamp = ros::Time::now();
@@ -257,7 +277,12 @@ void RosCamera::publishAuxiliaryValue() {
       image.step = sizeof(char) * 4 * mCamera->getWidth();
       image.data.resize(4 * mCamera->getWidth() * mCamera->getHeight());
       memcpy(&image.data[0], colorImage, sizeof(char) * 4 * mCamera->getWidth() * mCamera->getHeight());
-      mRecognitionSegmentationPublisher.publish(image);
+
+      if (mUseImageTransport) {
+        mItRecognitionSegmentationPublisher.publish(image);
+      } else {
+        mRecognitionSegmentationPublisher.publish(image);
+      }
     }
   }
 }
@@ -329,15 +354,23 @@ bool RosCamera::recognitionEnableCallback(webots_ros::set_int::Request &req, web
     res.success = true;
     mCamera->recognitionEnable(req.value);
 
-    std::string deviceNameFixed = RosDevice::fixedDeviceName();
-    webots_ros::RecognitionObjects type;
-    type.header.frame_id = deviceNameFixed;
-    mRecognitionObjectsPublisher = RosDevice::rosAdvertiseTopic(deviceNameFixed + "/recognition_objects", type);
+    // type.header.frame_id = deviceNameFixed;
+    enableRecognitionPublisher("recognition_objects");
   } else {
     ROS_WARN("Wrong sampling period: %d for device: %s.", req.value, RosDevice::fixedDeviceName().c_str());
     res.success = false;
   }
   return true;
+}
+
+void RosCamera::enableRecognitionPublisher(const std::string name, const bool override) {
+  webots_ros::RecognitionObjects type;
+  if (override) {
+    mRecognitionObjectsPublisher = RosDevice::rosAdvertiseTopic(name, type);
+  } else {
+    mRecognitionObjectsPublisher = RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
+  }
+ 
 }
 
 bool RosCamera::recognitionSamplingPeriodCallback(webots_ros::get_int::Request &req, webots_ros::get_int::Response &res) {
@@ -360,17 +393,26 @@ bool RosCamera::hasRecognitionSegmentationCallback(webots_ros::get_bool::Request
 
 bool RosCamera::enableRecognitionSegmentationCallback(webots_ros::get_bool::Request &req, webots_ros::get_bool::Response &res) {
   assert(mCamera);
+  return enableRecognitionSegmentation("recognition_segmentation_image", false);
+}
+
+bool RosCamera::enableRecognitionSegmentation(const std::string topic, const bool override) {
   if (mCamera->hasRecognition()) {
     mCamera->enableRecognitionSegmentation();
     if (!mRecognitionSegmentationPublisher && mCamera->hasRecognitionSegmentation() &&
         mCamera->getRecognitionSamplingPeriod() > 0) {
-      mRecognitionSegmentationPublisher = createImagePublisher("recognition_segmentation_image");
+      mRecognitionSegmentationTopic = override ? topic : RosDevice::fixedDeviceName() + "/" + topic;
+      if (mUseImageTransport) {
+        image_transport::ImageTransport it(*mRos->nodeHandle());
+        mItRecognitionSegmentationPublisher = it.advertise(mRecognitionSegmentationTopic, 1);
+      } else {
+        mRecognitionSegmentationPublisher = createImagePublisher(topic, override);
+      }
       mIsRecognitionSegmentationEnabled = true;
     }
-    res.value = true;
-  } else
-    res.value = false;
-  return true;
+    return true;
+  }
+  return false;
 }
 
 bool RosCamera::disableRecognitionSegmentationCallback(webots_ros::get_bool::Request &req,
@@ -378,13 +420,19 @@ bool RosCamera::disableRecognitionSegmentationCallback(webots_ros::get_bool::Req
   assert(mCamera);
   if (mCamera->hasRecognition()) {
     mCamera->disableRecognitionSegmentation();
-    mRecognitionSegmentationPublisher.shutdown();
+    if (mUseImageTransport) {
+      mItRecognitionSegmentationPublisher.shutdown();
+    } else {
+      mRecognitionSegmentationPublisher.shutdown();
+    }
     mIsRecognitionSegmentationEnabled = false;
     res.value = true;
   } else
     res.value = false;
   return true;
 }
+
+
 
 bool RosCamera::isRecognitionSegmentationEnabledCallback(webots_ros::get_bool::Request &req,
                                                          webots_ros::get_bool::Response &res) {
@@ -405,5 +453,10 @@ void RosCamera::enableImageTransport() {
   mUseImageTransport = true;
 
   image_transport::ImageTransport it(*mRos->nodeHandle());
-  mImagePub = it.advertise(mImageTopic, 1);
+  mItImagePub = it.advertise(mImageTopic, 1);
+
+  if (mIsRecognitionSegmentationEnabled) {
+    mRecognitionSegmentationPublisher.shutdown();
+    mItRecognitionSegmentationPublisher = it.advertise(mRecognitionSegmentationTopic, 1);
+  }
 }

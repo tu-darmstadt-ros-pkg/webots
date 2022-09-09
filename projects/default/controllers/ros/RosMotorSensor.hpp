@@ -18,6 +18,9 @@
 #include <webots/Motor.hpp>
 #include "RosSensor.hpp"
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosMotorSensor : public RosSensor {
@@ -25,7 +28,7 @@ public:
   RosMotorSensor(Motor *motor, const std::string &sensorName, Ros *ros);
   virtual ~RosMotorSensor() { cleanup(); }
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override;
   void rosDisable() override { cleanup(); }

@@ -42,23 +42,16 @@ RosReceiver::~RosReceiver() {
 }
 
 // creates a publisher for receiver datas with a string as message type
-ros::Publisher RosReceiver::createPublisher(std::vector<std::string> *topics) {
-
-  bool topic_override = false;
-  if (topics != nullptr) {
-    if (topics->size() == 1) {
-      topic_override = true;
-    }
-    else {
-      std::cerr << "Invalid amount of topics provided for Receiver " << RosDevice::fixedDeviceName() << std::endl;
-    }
-  }
-  webots_ros::StringStamped type;
+ros::Publisher RosReceiver::createPublisher(std::map<std::string, std::string> *topics) {
   std::string topicName = RosDevice::fixedDeviceName() + "/data";
-
-  if (topic_override) {
-    topicName = topics->at(0);
+  if (topics != nullptr) {
+    if (topics->find("data") != topics->end()) {
+      topicName = topics->at("data");
+    }
   }
+
+  webots_ros::StringStamped type;
+
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

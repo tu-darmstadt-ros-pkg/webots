@@ -35,35 +35,35 @@ RosGPS::~RosGPS() {
 
 // creates a publisher for GPS values with a [3x1] {double} array
 // for x,y and z absolute coordinates as message type
-ros::Publisher RosGPS::createPublisher(std::vector<std::string> *topics) {
-  bool topic_override = false;
+ros::Publisher RosGPS::createPublisher(std::map<std::string, std::string> *topics) {
+  std::string speedTopicName = RosDevice::fixedDeviceName() + "/speed";
   if (topics != nullptr) {
-    if (topics->size() == 3) {
-      topic_override = true;
-    }
-    else {
-      std::cerr << "Invalid amount of topics provided for GPS " << RosDevice::fixedDeviceName() << std::endl;
+    if (topics->find("speed") != topics->end()) {
+      speedTopicName = topics->at("speed");
     }
   }
-  
-  webots_ros::Float64Stamped speedType;
-  std::string speedTopicName = RosDevice::fixedDeviceName() + "/speed";
-  if (topic_override)
-    speedTopicName = topics->at(2);
-  mSpeedPublisher = RosDevice::rosAdvertiseTopic(speedTopicName, speedType);
 
   std::string speedVectorTopicName = RosDevice::fixedDeviceName() + "/speed_vector";
-  if (topic_override)
-    speedVectorTopicName = topics->at(1);
+  if (topics != nullptr) {
+    if (topics->find("speed_vector") != topics->end()) {
+      speedVectorTopicName = topics->at("speed_vector");
+    }
+  }
+
+  std::string valuesTopicName = RosDevice::fixedDeviceName() + "/value";
+  if (topics != nullptr) {
+    if (topics->find("value") != topics->end()) {
+      valuesTopicName = topics->at("value");
+    }
+  }
+
+  webots_ros::Float64Stamped speedType;
+  mSpeedPublisher = RosDevice::rosAdvertiseTopic(speedTopicName, speedType);
   mSpeedVectorPublisher = RosDevice::rosAdvertiseTopic(speedVectorTopicName, geometry_msgs::PointStamped());
 
-  std::string topicName = RosDevice::fixedDeviceName() + "/values";
-  
-  if (topic_override)
-    topicName = topics->at(0);
   if (mGPS->getCoordinateSystem() == GPS::WGS84)
-    return RosDevice::rosAdvertiseTopic(topicName, sensor_msgs::NavSatFix());
-  return RosDevice::rosAdvertiseTopic(topicName, geometry_msgs::PointStamped());
+    return RosDevice::rosAdvertiseTopic(valuesTopicName, sensor_msgs::NavSatFix());
+  return RosDevice::rosAdvertiseTopic(valuesTopicName, geometry_msgs::PointStamped());
 }
 
 // get value from the GPS and publish it into a [3x1] {double} array

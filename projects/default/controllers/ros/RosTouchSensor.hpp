@@ -21,6 +21,9 @@
 #include <webots_ros/get_float_array.h>
 #include <webots_ros/get_int.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosTouchSensor : public RosSensor {
@@ -28,7 +31,7 @@ public:
   RosTouchSensor(TouchSensor *touchSensor, Ros *ros);
   virtual ~RosTouchSensor();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mTouchSensor->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }

@@ -53,46 +53,42 @@ RosLidar::~RosLidar() {
 
 // creates a publisher for lidar image with
 // a [ImageWidth x ImageHeight] {float} array
-ros::Publisher RosLidar::createPublisher(std::vector<std::string> *topics) {
-
-  bool topic_override = false;
+ros::Publisher RosLidar::createPublisher(std::map<std::string, std::string> *topics) {
+  std::string pointCloudTopicName = RosDevice::fixedDeviceName() + "/point_cloud";
   if (topics != nullptr) {
-    if (topics->size() > 2) {
-      topic_override = true;
-      //directly enable point cloud, if provided with topic
-      if (topics->size() == 3 && topics->at(2) != "") {
-        mPointCloudTopic = topics->at(2);
-        mIsPointCloudEnabled = true;
-        std::string deviceNameFixed = RosDevice::fixedDeviceName();
-        sensor_msgs::PointCloud2 type;
-        mPointCloudPublisher = RosDevice::rosAdvertiseTopic(mPointCloudTopic, type);
-        mLidar->enablePointCloud();
-      }
-    }
-    else {
-      std::cerr << "Invalid amount of topics provided for Lidar " << RosDevice::fixedDeviceName() << std::endl;
+    if (topics->find("point_cloud") != topics->end()) {
+      mPointCloudTopic = topics->at("point_cloud");
+      mIsPointCloudEnabled = true;
+      std::string deviceNameFixed = RosDevice::fixedDeviceName();
+      sensor_msgs::PointCloud2 type;
+      mPointCloudPublisher = RosDevice::rosAdvertiseTopic(mPointCloudTopic, type);
+      mLidar->enablePointCloud();
     }
   }
-  std::string deviceNameFixed = RosDevice::fixedDeviceName();
+
+  std::string laserScanTopicName = RosDevice::fixedDeviceName() + "/laser_scan";
+  if (topics != nullptr) {
+    if (topics->find("laser_scan") != topics->end()) {
+      laserScanTopicName = topics->at("laser_scan");
+    }
+  }
+
+  std::string rangeImageTopicName = RosDevice::fixedDeviceName() + "/range_image";
+  if (topics != nullptr) {
+    if (topics->find("range_image") != topics->end()) {
+      rangeImageTopicName = topics->at("range_image");
+    }
+  }
+
   sensor_msgs::LaserScan LaserScanType;
-  if (mLidar->getNumberOfLayers() == 1) {
-    std::string scan_topic = deviceNameFixed + "/laser_scan";
-    if (topic_override) {
-      scan_topic = topics->at(0);
-    }
-    mLaserScanPublisher = RosDevice::rosAdvertiseTopic(scan_topic, LaserScanType);
-  }
+  mLaserScanPublisher = RosDevice::rosAdvertiseTopic(laserScanTopicName, LaserScanType);
   sensor_msgs::Image type;
   type.height = mLidar->getNumberOfLayers();
   type.width = mLidar->getHorizontalResolution();
   type.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
   type.step = sizeof(float) * mLidar->getHorizontalResolution();
-  
-  std::string range_topic = deviceNameFixed + "/range_image";
-  if (topic_override) {
-    range_topic = topics->at(1);
-  }
-  return RosDevice::rosAdvertiseTopic(range_topic, type);
+
+  return RosDevice::rosAdvertiseTopic(rangeImageTopicName, type);
 }
 
 // get image from the Lidar and publish it

@@ -39,23 +39,21 @@ RosRangeFinder::~RosRangeFinder() {
 
 // creates a publisher for range_finder image with
 // a [ImageWidth x ImageHeight] {float} array
-ros::Publisher RosRangeFinder::createPublisher(std::vector<std::string> *topics) {
-
-  bool topic_override = false;
+ros::Publisher RosRangeFinder::createPublisher(std::map<std::string, std::string> *topics) {
+  std::string rangeImageTopicName = RosDevice::fixedDeviceName() + "/range_image";
+  std::string cameraInfoTopicName = RosDevice::fixedDeviceName() + "/camera_info";
   if (topics != nullptr) {
-    if (topics->size() == 2) {
-      topic_override = true;
+    if (topics->find("camera_info") != topics->end()) {
+      createCameraInfoPublisher(topics->at("camera_info"), true);
+    } else {
+      createCameraInfoPublisher("camera_info");
     }
-    else {
-      std::cerr << "Invalid amount of topics provided for RangeFinder " << RosDevice::fixedDeviceName() << std::endl;
+
+    if (topics->find("range_image") != topics->end()) {
+      return createRangeImagePublisher(topics->at("range_image"), true);
     }
   }
-  
-  if (topic_override) {
-    createCameraInfoPublisher(topics->at(1), topic_override);
-    return createRangeImagePublisher(topics->at(0), true);
-  }
-  
+
   createCameraInfoPublisher("camera_info");
   return createRangeImagePublisher("range_image");
 }

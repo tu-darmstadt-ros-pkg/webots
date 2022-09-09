@@ -28,6 +28,9 @@
 #include <webots_ros/set_bool.h>
 #include <webots_ros/set_float.h>
 
+#include <string>
+#include <map>
+
 using namespace webots;
 
 class RosCamera : public RosSensor {
@@ -35,7 +38,7 @@ public:
   RosCamera(Camera *camera, Ros *ros);
   virtual ~RosCamera();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics=nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool getInfoCallback(webots_ros::camera_get_info::Request &req, webots_ros::camera_get_info::Response &res);
@@ -59,11 +62,14 @@ public:
   void rosDisable() override { cleanup(); }
   int rosSamplingPeriod() override { return mCamera->getSamplingPeriod(); }
 
+  bool enableRecognitionSegmentation(const std::string topic, const bool override = false);
+  void enableRecognitionPublisher(const std::string name, const bool override = false);
+
   void enableImageTransport();
 
 private:
-  ros::Publisher createImagePublisher(const std::string &name, bool override=false);
-  void createCameraInfoPublisher(const std::string &name, bool override=false);
+  ros::Publisher createImagePublisher(const std::string &name, bool override = false);
+  void createCameraInfoPublisher(const std::string &name, bool override = false);
   void cleanup() { mCamera->disable(); }
   sensor_msgs::Image createImageMsg();
   sensor_msgs::CameraInfo createCameraInfoMsg();
@@ -72,12 +78,14 @@ private:
 
   bool mUseImageTransport;
   std::string mImageTopic;
+  std::string mRecognitionSegmentationTopic;
 
   Camera *mCamera;
   ros::Publisher mRecognitionObjectsPublisher;
   ros::Publisher mRecognitionSegmentationPublisher;
   ros::Publisher mCameraInfoPublisher;
-  image_transport::Publisher mImagePub;
+  image_transport::Publisher mItImagePub;
+  image_transport::Publisher mItRecognitionSegmentationPublisher;
   ros::ServiceServer mInfoServer;
   ros::ServiceServer mFocusInfoServer;
   ros::ServiceServer mZoomInfoServer;

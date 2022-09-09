@@ -24,6 +24,9 @@
 #include <webots_ros/set_float.h>
 #include <webots_ros/set_int.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosJoystick : public RosSensor {
@@ -31,7 +34,7 @@ public:
   RosJoystick(Joystick *joystick, Ros *ros);
   virtual ~RosJoystick();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void publishAuxiliaryValue() override;
   bool getModelCallback(webots_ros::get_string::Request &req, webots_ros::get_string::Response &res);

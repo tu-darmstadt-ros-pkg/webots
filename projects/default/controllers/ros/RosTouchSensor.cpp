@@ -33,21 +33,12 @@ RosTouchSensor::~RosTouchSensor() {
 
 // creates a publisher for touch sensor value with either a {Bool}, a {Float64}
 // or a {WrenchStamped} as message type depending on TouchSensorType
-ros::Publisher RosTouchSensor::createPublisher(std::vector<std::string> *topics) {
-
-  bool topic_override = false;
-  if (topics != nullptr) {
-    if (topics->size() == 1) {
-      topic_override = true;
-    }
-    else {
-      std::cerr << "Invalid amount of topics provided for TouchSensor " << RosDevice::fixedDeviceName() << std::endl;
-    }
-  }
-
+ros::Publisher RosTouchSensor::createPublisher(std::map<std::string, std::string> *topics) {
   std::string topicName = RosDevice::fixedDeviceName() + "/value";
-  if (topic_override) {
-    topicName = topics->at(0);
+  if (topics != nullptr) {
+    if (topics->find("value") != topics->end()) {
+      topicName = topics->at("value");
+    }
   }
 
   if (mTouchSensor->getType() == TouchSensor::FORCE) {
@@ -58,7 +49,7 @@ ros::Publisher RosTouchSensor::createPublisher(std::vector<std::string> *topics)
     return RosDevice::rosAdvertiseTopic(topicName, type);
   } else {  // TouchSensor::BUMPER
     webots_ros::BoolStamped type;
-    
+
     return RosDevice::rosAdvertiseTopic(topicName, type);
   }
 }

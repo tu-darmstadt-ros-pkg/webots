@@ -21,6 +21,9 @@
 #include <webots_ros/get_bool.h>
 #include <webots_ros/set_bool.h>
 
+#include <map>
+#include <string>
+
 using namespace webots;
 
 class RosConnector : public RosSensor {
@@ -28,7 +31,7 @@ public:
   RosConnector(Connector *connector, Ros *ros);
   virtual ~RosConnector();
 
-  ros::Publisher createPublisher(std::vector<std::string> *topics=nullptr) override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics = nullptr) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mConnector->enablePresence(samplingPeriod); }
   void rosDisable() override { mConnector->disablePresence(); }
