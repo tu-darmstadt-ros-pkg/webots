@@ -33,18 +33,18 @@ uniform float fovYCorrectionCoefficient;
 
 uniform sampler2D inputTextures[6];
 
+
 void main() {
-  // update the z 3D-coordinate
-  float yCurrentAngle = (texUv.y - 0.5) * fovY / fovYCorrectionCoefficient + pi_2;
-  vec3 coord3d = vec3(0.0, 0.0, cos(yCurrentAngle));
+  //https://www.shadertoy.com/view/lssGD4
 
-  // update the x spherical coordinate
-  float xCurrentAngle = (0.5 - texUv.x) * fovX;
+  vec2 d = texUv-0.5;//vec2(x, y);
+  float yaw = sqrt(d.x*d.x +d.y*d.y) * fovX;
 
-  // update the x-y 3d coordinate
-  float sinY = sin(yCurrentAngle);
-  coord3d.x = sinY * cos(xCurrentAngle);
-  coord3d.y = sinY * sin(xCurrentAngle);
+  float roll = -atan(d.y, d.x);
+  float sy = -sin(yaw) * cos(roll);
+  float sz = sin(yaw) * sin(roll);
+  float sx = cos(yaw);
+  vec3 coord3d = vec3(sx, sy, sz);
 
   // normalize the 3d coordinate
   vec3 coord3dAbs = abs(coord3d);
@@ -113,6 +113,7 @@ void main() {
 
   vec2 faceCoord = vec2(0.5 * (1.0 - coord.x), 0.5 * (1.0 - coord.y));
   ivec2 imageIndex = ivec2(round(faceCoord.x * (subCamerasResolutionX - 1)), round(faceCoord.y * (subCamerasResolutionY - 1)));
+
 
   fragColor = vec4(0.0, 0.0, 0.0, 1.0);
   if (face == FRONT)
