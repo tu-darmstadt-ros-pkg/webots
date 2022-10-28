@@ -99,6 +99,12 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Radar.cpp">
       <Filter>Source Files\cpp</Filter>
     </ClCompile>
+    <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\RadioNuclearDetector.cpp">
+      <Filter>Source Files\cpp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\RadioNuclearSource.cpp">
+      <Filter>Source Files\cpp</Filter>
+    </ClCompile>
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\RangeFinder.cpp">
       <Filter>Source Files\cpp</Filter>
     </ClCompile>

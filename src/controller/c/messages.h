@@ -253,6 +253,18 @@
 // sim -> ctr
 #define C_RADIO_RECEIVE 1
 
+// for the radio nuclear detector device
+// sim -> ctr
+#define C_RADIO_NUCLEAR_DETECTOR_GET_MEASUREMENT 1
+
+// ctr-> sim
+//#define C_RADIO_NUCLEAR_DETECTOR_SET
+
+// for the radio nuclear source
+// ctr -> sim
+#define C_RADIO_NUCLEAR_SOURCE_SET_RANGE 1
+#define C_RADIO_NUCLEAR_SOURCE_SET_DOSAGE 2
+
 // connector device
 #define C_CONNECTOR_GET_PRESENCE 1
 #define C_CONNECTOR_LOCK 2

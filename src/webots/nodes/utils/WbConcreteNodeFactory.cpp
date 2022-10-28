@@ -79,6 +79,8 @@
 #include "WbProtoModel.hpp"
 #include "WbRadar.hpp"
 #include "WbRadio.hpp"
+#include "WbRadioNuclearDetector.hpp"
+#include "WbRadioNuclearSource.hpp"
 #include "WbRangeFinder.hpp"
 #include "WbReceiver.hpp"
 #include "WbRecognition.hpp"
@@ -240,6 +242,10 @@ WbNode *WbConcreteNodeFactory::createNode(const QString &modelName, WbTokenizer 
     return new WbRadar(tokenizer);
   if (modelName == "Radio")
     return new WbRadio(tokenizer);
+  if (modelName == "RadioNuclearDetector")
+    return new WbRadioNuclearDetector(tokenizer);
+  if (modelName == "RadioNuclearSource")
+    return new WbRadioNuclearSource(tokenizer);
   if (modelName == "RangeFinder")
     return new WbRangeFinder(tokenizer);
   if (modelName == "Receiver")
@@ -443,6 +449,10 @@ WbNode *WbConcreteNodeFactory::createCopy(const WbNode &original) {
     return new WbRadar(original);
   if (modelName == "Radio")
     return new WbRadio(original);
+  if (modelName == "RadioNuclearDetector")
+    return new WbRadioNuclearDetector(original);
+  if (modelName == "RadioNuclearSource")
+    return new WbRadioNuclearSource(original);
   if (modelName == "RangeFinder")
     return new WbRangeFinder(original);
   if (modelName == "Receiver")

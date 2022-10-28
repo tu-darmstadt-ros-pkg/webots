@@ -71,6 +71,8 @@ JAVA_FILES      = Accelerometer.java \
                   PositionSensor.java \
                   Propeller.java \
                   Radar.java \
+									RadioNuclearDetector.java \
+									RadioNuclearSource.java \
                   RadarTarget.java \
                   RangeFinder.java \
                   Receiver.java \

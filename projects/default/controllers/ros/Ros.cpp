@@ -38,6 +38,7 @@
 #include "RosPositionSensor.hpp"
 #include "RosRadar.hpp"
 #include "RosRangeFinder.hpp"
+#include "RosRadioNuclearDetector.hpp"
 #include "RosReceiver.hpp"
 #include "RosSensor.hpp"
 #include "RosSkin.hpp"
@@ -380,6 +381,10 @@ void Ros::setRosDevices(const char **hiddenDevices, int numberHiddenDevices) {
         break;
       case Node::RADAR:
         mSensorList.push_back(static_cast<RosSensor *>(new RosRadar(dynamic_cast<Radar *>(tempDevice), this)));
+        mDeviceList.push_back(static_cast<RosDevice *>(mSensorList.back()));
+        break;
+      case Node::RADIO_NUCLEAR_DETECTOR:
+        mSensorList.push_back(static_cast<RosSensor *>(new RosRadioNuclearDetector(dynamic_cast<RadioNuclearDetector *>(tempDevice), this)));
         mDeviceList.push_back(static_cast<RosDevice *>(mSensorList.back()));
         break;
       case Node::RANGE_FINDER:

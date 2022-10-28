@@ -41,7 +41,7 @@ RosReceiver::~RosReceiver() {
   cleanup();
 }
 
-// creates a publisher for receiver datas with a string as message type
+// creates a publisher for receiver data with a string as message type
 ros::Publisher RosReceiver::createPublisher(std::map<std::string, std::string> *topics) {
   std::string topicName = RosDevice::fixedDeviceName() + "/data";
   if (topics != nullptr) {

@@ -63,6 +63,8 @@ extern void wb_pen_init(WbDevice *);
 extern void wb_position_sensor_init(WbDevice *);
 extern void wb_touch_sensor_init(WbDevice *);
 extern void wb_radar_init(WbDevice *);
+extern void wb_radio_nuclear_detector_init(WbDevice *);
+extern void wb_radio_nuclear_source_init(WbDevice *);
 extern void wb_radio_init(WbDevice *);
 extern void wb_range_finder_init(WbDevice *);
 extern void wb_receiver_init(WbDevice *);
@@ -138,6 +140,12 @@ void wb_device_init(WbDevice *d) {
       break;
     case WB_NODE_RADAR:
       wb_radar_init(d);
+      break;
+    case WB_NODE_RADIO_NUCLEAR_DETECTOR:
+      wb_radio_nuclear_detector_init(d);
+      break;
+    case WB_NODE_RADIO_NUCLEAR_SOURCE:
+      wb_radio_nuclear_source_init(d);
       break;
     case WB_NODE_RADIO:
       wb_radio_init(d);

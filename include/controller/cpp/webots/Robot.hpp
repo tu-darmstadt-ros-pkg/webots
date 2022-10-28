@@ -42,6 +42,8 @@ namespace webots {
   class Pen;
   class PositionSensor;
   class Radar;
+  class RadioNuclearDetector;
+  class RadioNuclearSource;
   class RangeFinder;
   class Receiver;
   class Skin;
@@ -114,6 +116,8 @@ namespace webots {
     Pen *getPen(const std::string &name);
     PositionSensor *getPositionSensor(const std::string &name);
     Radar *getRadar(const std::string &name);
+    RadioNuclearDetector *getRadioNuclearDetector(const std::string &name);
+    RadioNuclearSource *getRadioNuclearSource(const std::string &name);
     RangeFinder *getRangeFinder(const std::string &name);
     Receiver *getReceiver(const std::string &name);
     Skin *getSkin(const std::string &name);
@@ -158,6 +162,8 @@ namespace webots {
     virtual Pen *createPen(const std::string &name) const;
     virtual PositionSensor *createPositionSensor(const std::string &name) const;
     virtual Radar *createRadar(const std::string &name) const;
+    virtual RadioNuclearDetector *createRadioNuclearDetector(const std::string &name) const;
+    virtual RadioNuclearSource *createRadioNuclearSource(const std::string &name) const;
     virtual RangeFinder *createRangeFinder(const std::string &name) const;
     virtual Receiver *createReceiver(const std::string &name) const;
     virtual Skin *createSkin(const std::string &name) const;

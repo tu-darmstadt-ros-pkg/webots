@@ -383,6 +383,8 @@ QT_SOURCES = WbAboutBox.cpp \
   WbQjsFile.cpp \
   WbRadar.cpp \
   WbRadio.cpp \
+  WbRadioNuclearSource.cpp \
+  WbRadioNuclearDetector.cpp \
   WbRadioPlugin.cpp \
   WbRangeFinder.cpp \
   WbReceiver.cpp \

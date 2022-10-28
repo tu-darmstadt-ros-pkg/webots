@@ -88,8 +88,8 @@ unset XDG_SESSION_TYPE
 unset WAYLAND_DISPLAY
 
 # execute the real Webots binary in a child process
-if [ command -v prime-switch >/dev/null 2>&1 ] && 
-   [ command -v nvidia-settings > /dev/null 2>&1 ]; then
+if  command -v prime-switch >/dev/null 2>&1 && 
+    command -v nvidia-settings > /dev/null 2>&1 ; then
   export __NV_PRIME_RENDER_OFFLOAD=1
   export __GLX_VENDOR_LIBRARY_NAME=nvidia
   export __VK_LAYER_NV_optimus=NVIDIA_only

@@ -142,6 +142,10 @@ const char *wb_node_get_name(WbNodeType t) {
       return "Radar";
     case WB_NODE_RADIO:
       return "Radio";
+    case WB_NODE_RADIO_NUCLEAR_DETECTOR:
+      return "RadioNuclearDetector";
+    case WB_NODE_RADIO_NUCLEAR_SOURCE:
+      return "RadioNuclearSource";
     case WB_NODE_RANGE_FINDER:
       return "RangeFinder";
     case WB_NODE_RECEIVER:

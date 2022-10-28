@@ -49,6 +49,8 @@
 #include "WbPositionSensor.hpp"
 #include "WbProtoModel.hpp"
 #include "WbRadar.hpp"
+#include "WbRadioNuclearDetector.hpp"
+#include "WbRadioNuclearSource.hpp"
 #include "WbReceiver.hpp"
 #include "WbRobot.hpp"
 #include "WbSFNode.hpp"
@@ -318,6 +320,8 @@ namespace {
           return true;
         if (nodeName == "SpotLight")
           return true;
+        if (nodeName == "RadioNuclearSource")
+          return true;
 
         errorMessage = QObject::tr("%1 node cannot be inserted at the top level of the node hierarchy.").arg(nodeName);
         return false;
@@ -557,6 +561,8 @@ namespace {
           return true;
         if (nodeName == "TrackWheel")
           return parentModelName == "Track";
+        if (nodeName == "RadioNuclearSource")
+          return true;
 
         if (nodeName == "Connector" || nodeName.endsWith("Joint")) {
           if (WbNodeUtilities::isSolidTypeName(parentModelName) || WbNodeUtilities::findUpperSolid(node) != NULL)
@@ -1108,13 +1114,15 @@ void WbNodeUtilities::fixBackwardCompatibility(WbNode *node) {
     if (dynamic_cast<WbCamera *>(candidate) || dynamic_cast<WbLidar *>(candidate) || dynamic_cast<WbRadar *>(candidate) ||
         dynamic_cast<WbPen *>(candidate) || dynamic_cast<WbEmitter *>(candidate) || dynamic_cast<WbReceiver *>(candidate) ||
         dynamic_cast<WbConnector *>(candidate) || dynamic_cast<WbTouchSensor *>(candidate) ||
-        dynamic_cast<WbViewpoint *>(candidate) || dynamic_cast<WbTrack *>(candidate)) {
+        dynamic_cast<WbViewpoint *>(candidate) || dynamic_cast<WbTrack *>(candidate) ||
+        dynamic_cast<WbRadioNuclearDetector *>(candidate) || dynamic_cast<WbRadioNuclearSource *>(candidate)) {
       // Rotate devices.
       WbMatrix3 rotationFix(-M_PI_2, 0, M_PI_2);
       if (dynamic_cast<WbPen *>(candidate) || dynamic_cast<WbTrack *>(candidate))
         rotationFix = WbMatrix3(-M_PI_2, 0, 0);
       if (dynamic_cast<WbEmitter *>(candidate) || dynamic_cast<WbReceiver *>(candidate) ||
-          dynamic_cast<WbConnector *>(candidate) || dynamic_cast<WbTouchSensor *>(candidate))
+          dynamic_cast<WbConnector *>(candidate) || dynamic_cast<WbTouchSensor *>(candidate)||
+          dynamic_cast<WbRadioNuclearDetector *>(candidate) || dynamic_cast<WbRadioNuclearSource *>(candidate))
         rotationFix = WbMatrix3(-M_PI_2, 0, -M_PI_2);
 
       // Rotate the viewpoint (exception).
@@ -1561,6 +1569,7 @@ bool WbNodeUtilities::isSolidDeviceTypeName(const QString &modelName) {
                                                    << "LightSensor"
                                                    << "Pen"
                                                    << "Radar"
+                                                   << "RadioNuclearDetector"
                                                    << "RangeFinder"
                                                    << "Receiver"
                                                    << "Speaker"

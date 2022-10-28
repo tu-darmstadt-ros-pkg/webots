@@ -352,6 +352,16 @@ def main(args=None):
     gen(FUNC, "wb_radar_get_vertical_fov(tag)", "radar")
     gen(FUNC, "wb_radar_get_sampling_period(tag)", "radar")
 
+    # radio_nuclear_detector.h
+    gen(PROC, "wb_radio_nuclear_detector_disable(tag)", "radio_nuclear_detector")
+    gen(PROC, "wb_radio_nuclear_detector_enable(tag, sampling_period)", "radio_nuclear_detector")
+    gen(FUNC, "wb_radio_nuclear_detector_get_sampling_period(tag)", "radio_nuclear_detector")
+    gen(FUNC, "wb_radio_nuclear_detector_get_measurement(tag)", "radio_nuclear_detector")
+
+    # radio_nuclear_source.h
+    gen(FUNC, "wb_radio_nuclear_source_get_range(tag)", "radio_nuclear_source")
+    gen(PROC, "wb_radio_nuclear_source_set_range(tag, range)", "radio_nuclear_detector")
+
     # range_finder.h
     gen(PROC, "wb_range_finder_disable(tag)", "rangefinder")
     gen(PROC, "wb_range_finder_enable(tag, sampling_period)", "rangefinder")
@@ -694,6 +704,7 @@ def main(args=None):
         WB_NODE_GPS, WB_NODE_GYRO, WB_NODE_INERTIAL_UNIT, WB_NODE_LED, WB_NODE_LIDAR,
         WB_NODE_LIGHT_SENSOR, WB_NODE_LINEAR_MOTOR, WB_NODE_PEN,
         WB_NODE_POSITION_SENSOR, WB_NODE_PROPELLER, WB_NODE_RADAR,
+        WB_NODE_RADIO_NUCLEAR_DETECTOR, WB_NODE_RADIO_NUCLEAR_SOURCE,
         WB_NODE_RANGE_FINDER, WB_NODE_RECEIVER, WB_NODE_ROTATIONAL_MOTOR,
         WB_NODE_SKIN, WB_NODE_SPEAKER, WB_NODE_TOUCH_SENSOR,
         WB_NODE_BALL_JOINT, WB_NODE_BALL_JOINT_PARAMETERS, WB_NODE_CHARGER,

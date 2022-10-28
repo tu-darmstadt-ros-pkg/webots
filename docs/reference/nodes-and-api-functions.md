@@ -68,6 +68,8 @@
 - [PositionSensor](positionsensor.md)
 - [Propeller](propeller.md)
 - [Radar](radar.md)
+- [RadioNuclearDetector](radio_nuclear_detector.md)
+- [RadioNuclearSource](radio_nuclear_source.md)
 - [RangeFinder](rangefinder.md)
 - [Receiver](receiver.md)
 - [Recognition](recognition.md)

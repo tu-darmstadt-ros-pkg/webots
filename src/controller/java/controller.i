@@ -49,6 +49,8 @@
 #include <webots/PositionSensor.hpp>
 #include <webots/radar_target.h>
 #include <webots/Radar.hpp>
+#include <webots/RadioNuclearDetector.hpp>
+#include <webots/RadioNuclearSource.hpp>
 #include <webots/RangeFinder.hpp>
 #include <webots/Receiver.hpp>
 #include <webots/Robot.hpp>
@@ -761,6 +763,18 @@ namespace webots {
 %}
 
 %include <webots/Radar.hpp>
+
+//----------------------------------------------------------------------------------------------
+//  RadioNuclearDetector
+//----------------------------------------------------------------------------------------------
+// TODO ?
+%include <webots/RadioNuclearDetector.hpp>
+
+//----------------------------------------------------------------------------------------------
+//  RadioNuclearSource
+//----------------------------------------------------------------------------------------------
+
+%include <webots/RadioNuclearSource.hpp>
 
 //----------------------------------------------------------------------------------------------
 //  RangeFinder

@@ -146,6 +146,8 @@
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Pen.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\PositionSensor.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Radar.cpp" />
+    <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\RadioNuclearDetector.cpp" />
+    <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\RadioNuclearSource.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\RangeFinder.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Receiver.cpp" />
     <ClCompile Include="$(WEBOTS_HOME)\src\controller\cpp\Robot.cpp" />

@@ -44,6 +44,8 @@
 #include <webots/Pen.hpp>
 #include <webots/PositionSensor.hpp>
 #include <webots/Radar.hpp>
+#include <webots/RadioNuclearDetector.hpp>
+#include <webots/RadioNuclearSource.hpp>
 #include <webots/RangeFinder.hpp>
 #include <webots/Receiver.hpp>
 #include <webots/Skin.hpp>
@@ -400,6 +402,28 @@ Radar *Robot::createRadar(const string &name) const {
   return new Radar(name);
 }
 
+RadioNuclearDetector *Robot::getRadioNuclearDetector(const string &name) {
+  WbDeviceTag tag = wb_robot_get_device(name.c_str());
+  if (!Device::hasType(tag, WB_NODE_RADIO_NUCLEAR_DETECTOR))
+    return NULL;
+  return dynamic_cast<RadioNuclearDetector *>(getOrCreateDevice(tag));
+}
+
+RadioNuclearDetector *Robot::createRadioNuclearDetector(const string &name) const {
+  return new RadioNuclearDetector(name);
+}
+
+RadioNuclearSource *Robot::getRadioNuclearSource(const string &name) {
+  WbDeviceTag tag = wb_robot_get_device(name.c_str());
+  if (!Device::hasType(tag, WB_NODE_RADIO_NUCLEAR_SOURCE))
+    return NULL;
+  return dynamic_cast<RadioNuclearSource *>(getOrCreateDevice(tag));
+}
+
+RadioNuclearSource *Robot::createRadioNuclearSource(const string &name) const {
+  return new RadioNuclearSource(name);
+}
+
 RangeFinder *Robot::getRangeFinder(const string &name) {
   WbDeviceTag tag = wb_robot_get_device(name.c_str());
   if (!Device::hasType(tag, WB_NODE_RANGE_FINDER))
@@ -543,6 +567,12 @@ Device *Robot::getOrCreateDevice(int tag) {
         break;
       case WB_NODE_RADAR:
         deviceList[otherTag] = createRadar(name);
+        break;
+      case WB_NODE_RADIO_NUCLEAR_DETECTOR:
+        deviceList[otherTag] = createRadioNuclearDetector(name);
+        break;
+      case WB_NODE_RADIO_NUCLEAR_SOURCE:
+        deviceList[otherTag] = createRadioNuclearSource(name);
         break;
       case WB_NODE_RANGE_FINDER:
         deviceList[otherTag] = createRangeFinder(name);

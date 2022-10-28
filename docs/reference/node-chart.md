@@ -77,6 +77,8 @@ graph LR
         SolidDevice --> Pen[[Pen](pen.md)]
         SolidDevice --> Propeller[[Propeller](propeller.md)]
         SolidDevice --> Radar[[Radar](radar.md)]
+        SolidDevice --> RadioNuclearDetector[[RadioNuclearDetector]](radio_nuclear_detector.md)
+        SolidDevice --> RadioNuclearSource[[RadioNuclearSource]](radio_nuclear_source.md)
         SolidDevice --> RangeFinder[[RangeFinder](rangefinder.md)]
         SolidDevice --> Receiver[[Receiver](receiver.md)]
         SolidDevice --> Speaker[[Speaker](speaker.md)]

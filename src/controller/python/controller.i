@@ -66,6 +66,8 @@ if os.name == 'nt' and sys.version_info >= (3, 8):  # we need to explicitly list
 #include <webots/Pen.hpp>
 #include <webots/PositionSensor.hpp>
 #include <webots/Radar.hpp>
+#include <webots/RadioNuclearDetector.hpp>
+#include <webots/RadioNuclearSource.hpp>
 #include <webots/radar_target.h>
 #include <webots/RangeFinder.hpp>
 #include <webots/Receiver.hpp>
@@ -969,6 +971,16 @@ class AnsiCodes(object):
 %typemap(out) float *;
 
 //----------------------------------------------------------------------------------------------
+//  RadioNuclearDetector
+//----------------------------------------------------------------------------------------------
+%include <webots/RadioNuclearDetector.hpp>
+
+//----------------------------------------------------------------------------------------------
+//  RadioNuclearSource
+//----------------------------------------------------------------------------------------------
+%include <webots/RadioNuclearSource.hpp>
+
+//----------------------------------------------------------------------------------------------
 //  Receiver
 //----------------------------------------------------------------------------------------------
 
@@ -1024,6 +1036,7 @@ class AnsiCodes(object):
 %ignore webots::Robot::getPen(const std::string &name);
 %ignore webots::Robot::getPositionSensor(const std::string &name);
 %ignore webots::Robot::getRadar(const std::string &name);
+%ignore webots::Robot::getRadioNuclearDetector(const std::string &name);
 %ignore webots::Robot::getRangeFinder(const std::string &name);
 %ignore webots::Robot::getReceiver(const std::string &name);
 %ignore webots::Robot::getSkin(const std::string &name);
@@ -1207,6 +1220,14 @@ class AnsiCodes(object):
       if not Device.hasType(tag, Node.RADAR):
         return None
       return self.__getOrCreateDevice(tag)
+    def createRadioNuclearDetector(self, name):
+      return RadioNuclearDetector(name)
+    def getRadioNuclearDetector(self, name):
+      sys.stderr.write("DEPRECATION: Robot.getRadioNuclearDetector is deprecated, please use Robot.getDevice instead.\n")
+      tag = self.__internalGetDeviceTagFromName(name)
+      if not Device.hasType(tag, Node.RADIO_NUCLEAR_DETECTOR):
+        return None
+      return self.__getOrCreateDevice(tag)
     def createRangeFinder(self, name):
       return RangeFinder(name)
     def getRangeFinder(self, name):
@@ -1317,6 +1338,8 @@ class AnsiCodes(object):
               Robot.__devices[otherTag] = self.createPositionSensor(name)
           elif nodeType == Node.RADAR:
               Robot.__devices[otherTag] = self.createRadar(name)
+          elif nodeType == Node.RADIO_NUCLEAR_DETECTOR:
+              Robot.__devices[otherTag] = self.createRadioNuclearDetector(name)
           elif nodeType == Node.RANGE_FINDER:
               Robot.__devices[otherTag] = self.createRangeFinder(name)
           elif nodeType == Node.RECEIVER:
