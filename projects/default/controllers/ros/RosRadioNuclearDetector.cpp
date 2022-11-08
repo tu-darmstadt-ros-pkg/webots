@@ -1,7 +1,8 @@
 // Copyright TODO(FB)
 
 #include "RosRadioNuclearDetector.hpp"
-#include "webots_ros/Float64Stamped.h"
+#include <rosbridge_msgs/ConnectedClient.h>
+#include <radiation_msgs/DoseRate.h>
 
 RosRadioNuclearDetector::RosRadioNuclearDetector(RadioNuclearDetector *detector, Ros *ros) : RosSensor(detector->getName(), detector, ros) {
   mRadioNuclearDetector = detector;
@@ -22,20 +23,24 @@ ros::Publisher RosRadioNuclearDetector::createPublisher(std::map<std::string, st
     }
   }
 
-  webots_ros::Float64Stamped type;
+  radiation_msgs::DoseRate type;
 
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 
 void RosRadioNuclearDetector::publishValue(ros::Publisher publisher) {
-  webots_ros::Float64Stamped value;
+  radiation_msgs::DoseRate value;
   value.header.stamp = ros::Time::now();
   if (mFrameOverride != "") {
     value.header.frame_id = mFrameOverride;
   } else {
     value.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
   }
-  value.data = mRadioNuclearDetector->getMeasurement();
+  value.rate = mRadioNuclearDetector->getMeasurement();
+
+  value.radiation_type = 4; // TODO(FB) update to correct depending on type; needs passthrough
+  value.integration_time = 1.0; // TODO(FB) set 
+  value.units = 2; // TODO(FB)
   publisher.publish(value);
 }
 

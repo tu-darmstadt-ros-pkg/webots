@@ -46,7 +46,7 @@ else
  ros_automobile: $(CXX_SOURCES:.cxx=.d)
 endif
 
-INCLUDE = -I$(WEBOTS_HOME_PATH)/projects/default/controllers/ros -isystem $(WEBOTS_HOME_PATH)/projects/default/controllers/ros/include -isystem /opt/ros/$(ROS_DISTRO)/include
+INCLUDE = -I$(WEBOTS_HOME_PATH)/projects/default/controllers/ros -isystem $(WEBOTS_HOME_PATH)/projects/default/controllers/ros/include -isystem /opt/ros/$(ROS_DISTRO)/include -isystem $(ROS_WORKSPACE)/../devel/include
 LIBRARIES += -lCppDriver -lCppCar -ldriver -lcar
 
 # include ros libraries

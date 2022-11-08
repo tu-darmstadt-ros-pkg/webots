@@ -65,7 +65,8 @@ include/services/%.h: $(WEBOTS_HOME_PATH)/resources/webots_ros/srv/%.srv include
 	@echo "# generating service header" $(notdir $<)
 	$(SILENT)$(PYTHON_COMMAND) headersFromSRV.py $<
 
-INCLUDE = -isystem $(WEBOTS_HOME_PATH)/projects/default/controllers/ros/include -isystem /opt/ros/$(ROS_DISTRO)/include
+INCLUDE = -isystem $(ROS_WORKSPACE)/../devel/include -isystem $(WEBOTS_HOME_PATH)/projects/default/controllers/ros/include -isystem /opt/ros/$(ROS_DISTRO)/include 
+
 
 # include ros libraries
 
@@ -92,7 +93,7 @@ CFLAGS += -Wno-unused-local-typedefs
 CFLAGS += -std=c++11
 endif
 
-FILES_TO_REMOVE += include/webots_ros include/messages include/services headersGenerator.pyc include/XmlRpcDecl.h include/XmlRpcValue.h include/geometry_msgs include/log4cxx include/ros include/rosconsole include/rosgraph_msgs include/sensor_msgs include/std_msgs include/hardware_interface include/controller_manager include/boost __pycache__ $(wildcard include/*.zip)
+FILES_TO_REMOVE += include/webots_ros include/messages include/services headersGenerator.pyc include/XmlRpcDecl.h include/XmlRpcValue.h include/geometry_msgs include/log4cxx include/ros include/rosconsole include/rosgraph_msgs include/sensor_msgs include/std_msgs include/hardware_interface include/controller_manager include/radiation_msgs include/boost __pycache__ $(wildcard include/*.zip)
 
 ### Do not modify: this includes Webots global Makefile.include
 
