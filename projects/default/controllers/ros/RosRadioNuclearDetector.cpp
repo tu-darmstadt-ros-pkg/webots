@@ -1,7 +1,6 @@
 // Copyright TODO(FB)
 
 #include "RosRadioNuclearDetector.hpp"
-#include <rosbridge_msgs/ConnectedClient.h>
 #include <radiation_msgs/DoseRate.h>
 
 RosRadioNuclearDetector::RosRadioNuclearDetector(RadioNuclearDetector *detector, Ros *ros) : RosSensor(detector->getName(), detector, ros) {
