@@ -90,10 +90,11 @@ unset WAYLAND_DISPLAY
 # execute the real Webots binary in a child process
 if  command -v prime-switch >/dev/null 2>&1 && 
     command -v nvidia-settings > /dev/null 2>&1 ; then
-  export __NV_PRIME_RENDER_OFFLOAD=1
-  export __GLX_VENDOR_LIBRARY_NAME=nvidia
-  export __VK_LAYER_NV_optimus=NVIDIA_only
-  export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+  #TODO fix prime export
+  #export __NV_PRIME_RENDER_OFFLOAD=1
+  #export __GLX_VENDOR_LIBRARY_NAME=nvidia
+  #export __VK_LAYER_NV_optimus=NVIDIA_only
+  #export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
   "$webots_home/bin/webots-bin" "$@" &
 elif [ command -v primusrun >/dev/null 2>&1 ]; then
   primusrun "$webots_home/bin/webots-bin" "$@" &
