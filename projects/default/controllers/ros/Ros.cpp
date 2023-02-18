@@ -436,7 +436,7 @@ RosSensor* Ros::enableSensor(const std::string name, double rate, std::map<std::
     if (factor < 1.0) {
       factor = 1.0;
     }
-    stepSize = std::round(factor) * 16;
+    stepSize = std::round(factor) * mRobot->getBasicTimeStep();
     //could be done with modulo, rate would be rounded up always
   }
 
