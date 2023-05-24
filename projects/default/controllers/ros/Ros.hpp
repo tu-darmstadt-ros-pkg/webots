@@ -36,7 +36,6 @@
 #include <highlevel/RosControl.hpp>
 
 
-
 using namespace webots;
 
 class RosSensor;
