@@ -359,14 +359,14 @@ def main(args=None):
     generator.gen(FUNC, "wb_radar_get_sampling_period(tag)", "radar")
 
     # radio_nuclear_detector.h
-    gen(PROC, "wb_radio_nuclear_detector_disable(tag)", "radio_nuclear_detector")
-    gen(PROC, "wb_radio_nuclear_detector_enable(tag, sampling_period)", "radio_nuclear_detector")
-    gen(FUNC, "wb_radio_nuclear_detector_get_sampling_period(tag)", "radio_nuclear_detector")
-    gen(FUNC, "wb_radio_nuclear_detector_get_measurement(tag)", "radio_nuclear_detector")
+    generator.gen(PROC, "wb_radio_nuclear_detector_disable(tag)", "radio_nuclear_detector")
+    generator.gen(PROC, "wb_radio_nuclear_detector_enable(tag, sampling_period)", "radio_nuclear_detector")
+    generator.gen(FUNC, "wb_radio_nuclear_detector_get_sampling_period(tag)", "radio_nuclear_detector")
+    generator.gen(FUNC, "wb_radio_nuclear_detector_get_measurement(tag)", "radio_nuclear_detector")
 
     # radio_nuclear_source.h
-    gen(FUNC, "wb_radio_nuclear_source_get_range(tag)", "radio_nuclear_source")
-    gen(PROC, "wb_radio_nuclear_source_set_range(tag, range)", "radio_nuclear_detector")
+    generator.gen(FUNC, "wb_radio_nuclear_source_get_range(tag)", "radio_nuclear_source")
+    generator.gen(PROC, "wb_radio_nuclear_source_set_range(tag, range)", "radio_nuclear_detector")
 
     # range_finder.h
     generator.gen(PROC, "wb_range_finder_disable(tag)", "rangefinder")

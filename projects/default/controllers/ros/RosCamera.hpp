@@ -73,7 +73,7 @@ private:
   void createCameraInfoPublisher(const std::string &name, bool override = false);
   void cleanup() { mCamera->disable(); }
   sensor_msgs::Image createImageMsg();
-  sensor_msgs::CameraInfo createCameraInfoMsg();
+  sensor_msgs::CameraInfo createCameraInfoMessage();
 
   bool mIsRecognitionSegmentationEnabled;
 

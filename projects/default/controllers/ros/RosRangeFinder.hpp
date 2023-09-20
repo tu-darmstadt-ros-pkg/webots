@@ -47,22 +47,14 @@ public:
   
 private:
   void cleanup() { mRangeFinder->disable(); }
-<<<<<<< HEAD
   ros::Publisher createRangeImagePublisher(const std::string &name, bool override=false);
   void createCameraInfoPublisher(const std::string &name, bool override=false);
   sensor_msgs::Image createImageMsg();
-  sensor_msgs::CameraInfo createCameraInfoMsg();
+  sensor_msgs::CameraInfo createCameraInfoMessage();
   bool mUseImageTransport;
   image_transport::Publisher mImagePub;
-
   ros::Publisher mCameraInfoPublisher;
-=======
-  void createCameraInfoPublisher();
-  sensor_msgs::CameraInfo createCameraInfoMessage();
-
->>>>>>> 8aba6eaae76989facf3442305c8089d3cc366bcf
   RangeFinder *mRangeFinder;
-  ros::Publisher mCameraInfoPublisher;
   std::string mRangeTopic;
   ros::ServiceServer mInfoServer;
   ros::ServiceServer mImageServer;

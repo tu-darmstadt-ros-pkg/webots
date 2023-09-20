@@ -177,7 +177,7 @@ sensor_msgs::Image RosCamera::createImageMsg() {
   return image;
 }
 
-sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
+sensor_msgs::CameraInfo RosCamera::createCameraInfoMessage() {
   sensor_msgs::CameraInfo info;
     info.header.stamp = ros::Time::now();
 
@@ -209,6 +209,7 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
     info.K = K;
     boost::array<double, 9> R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}; //important for stereo though
     info.R = R;
+
     boost::array<double, 12> P = {fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0};
     info.P = P;
     info.binning_x = 0.0;
@@ -222,36 +223,6 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMsg() {
     return info;
 }
 
-sensor_msgs::CameraInfo RosCamera::createCameraInfoMessage() {
-  sensor_msgs::CameraInfo info;
-  info.header.stamp = ros::Time::now();
-  info.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName();
-
-  const double width = mCamera->getWidth();
-  const double height = mCamera->getHeight();
-  info.width = width;
-  info.height = height;
-
-  const double horizontalFov = mCamera->getFov();
-  const double focalLength = width / (2.0 * tan(horizontalFov / 2.0));
-
-  const double fx = focalLength;
-  const double fy = focalLength;
-  const double cx = (width + 1.0) / 2.0;
-  const double cy = (height + 1.0) / 2.0;
-
-  const boost::array<double, 9> K = {fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0};
-  info.K = K;
-
-  const boost::array<double, 9> R = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
-  info.R = R;
-
-  const boost::array<double, 12> P = {fx, 0.0, cx, 0.0, 0.0, fy, cy, 0.0, 0.0, 0.0, 1.0, 0.0};
-  info.P = P;
-
-  return info;
-}
-
 void RosCamera::publishAuxiliaryValue() {
   //imageTransport
   if (mUseImageTransport && mItImagePub.getNumSubscribers() > 0) {
@@ -259,7 +230,7 @@ void RosCamera::publishAuxiliaryValue() {
   }
   //CameraInfo
   if (mCameraInfoPublisher.getNumSubscribers() > 0) {
-    mCameraInfoPublisher.publish(createCameraInfoMsg());
+    mCameraInfoPublisher.publish(createCameraInfoMessage());
   }
 
   if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0 && (mRecognitionSegmentationPublisher.getNumSubscribers() > 0 || mItRecognitionSegmentationPublisher.getNumSubscribers() > 0)) {
