@@ -29,9 +29,15 @@ RosVacuumGripper::~RosVacuumGripper() {
   cleanup();
 }
 
-ros::Publisher RosVacuumGripper::createPublisher() {
-  webots_ros::BoolStamped type;
+ros::Publisher RosVacuumGripper::createPublisher(std::map<std::string, std::string> *topics) {
   std::string topicName = RosDevice::fixedDeviceName() + "/presence";
+  if (topics != nullptr) {
+    if (topics->find("presence") != topics->end()) {
+      topicName = topics->at("presence");
+    }
+  }
+
+  webots_ros::BoolStamped type;
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 

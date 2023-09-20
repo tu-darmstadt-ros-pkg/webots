@@ -28,7 +28,7 @@ public:
   RosVacuumGripper(VacuumGripper *vacuumGripper, Ros *ros);
   virtual ~RosVacuumGripper();
 
-  ros::Publisher createPublisher() override;
+  ros::Publisher createPublisher(std::map<std::string, std::string> *topics) override;
   void publishValue(ros::Publisher publisher) override;
   void rosEnable(int samplingPeriod) override { mVacuumGripper->enablePresence(samplingPeriod); }
   void rosDisable() override { mVacuumGripper->disablePresence(); }

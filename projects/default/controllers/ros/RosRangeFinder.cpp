@@ -83,6 +83,7 @@ void RosRangeFinder::createCameraInfoPublisher(const std::string &name, bool ove
   else {
     mCameraInfoPublisher = RosDevice::rosAdvertiseTopic(RosDevice::fixedDeviceName() + "/" + name, type);
   }
+}
 
 // get image from the RangeFinder and publish it
 void RosRangeFinder::publishValue(ros::Publisher publisher) {
@@ -112,11 +113,6 @@ sensor_msgs::Image RosRangeFinder::createImageMsg() {
   image.data.resize(sizeof(float) * mRangeFinder->getWidth() * mRangeFinder->getHeight());
   memcpy(&image.data[0], rangeImageVector, sizeof(float) * mRangeFinder->getWidth() * mRangeFinder->getHeight());
   return image;
-}
-
-void RosRangeFinder::publishAuxiliaryValue() {
-  if (mCameraInfoPublisher.getNumSubscribers() > 0)
-    mCameraInfoPublisher.publish(createCameraInfoMessage());
 }
 
 bool RosRangeFinder::getInfoCallback(webots_ros::range_finder_get_info::Request &req,

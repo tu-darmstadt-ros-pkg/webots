@@ -49,7 +49,6 @@ ros::Publisher RosDistanceSensor::createPublisher(std::map<std::string, std::str
   }
 
   sensor_msgs::Range type;
-
   return RosDevice::rosAdvertiseTopic(topicName, type);
 }
 
