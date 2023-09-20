@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,10 @@
 
 #include "WbActionManager.hpp"
 #include "WbApplication.hpp"
+#include "WbGroup.hpp"
 #include "WbInsertExternProtoDialog.hpp"
 #include "WbProtoManager.hpp"
+#include "WbWorld.hpp"
 
 #include <QtCore/QEvent>
 #include <QtGui/QAction>
@@ -29,8 +31,6 @@
 
 WbExternProtoEditor::WbExternProtoEditor(QWidget *parent) : WbValueEditor(parent) {
   connect(this, &WbExternProtoEditor::changed, WbActionManager::instance()->action(WbAction::SAVE_WORLD), &QAction::setEnabled);
-  connect(WbProtoManager::instance(), &WbProtoManager::externProtoListChanged, this, &WbExternProtoEditor::updateContents);
-  updateContents();
 }
 
 WbExternProtoEditor::~WbExternProtoEditor() {
@@ -38,13 +38,7 @@ WbExternProtoEditor::~WbExternProtoEditor() {
 
 void WbExternProtoEditor::updateContents() {
   // clear layout
-  for (int i = mLayout->count() - 1; i >= 0; --i) {
-    QWidget *const widget = mLayout->itemAt(i)->widget();
-    if (widget) {
-      layout()->removeWidget(widget);
-      delete widget;
-    }
-  }
+  clearLayout();
 
   QTextEdit *const info = new QTextEdit("PROTO that may be imported during the execution must be declared");
 
@@ -117,14 +111,29 @@ void WbExternProtoEditor::insertImportableExternProto() {
 void WbExternProtoEditor::removeImportableExternProto() {
   const QPushButton *const caller = qobject_cast<QPushButton *>(sender());
   const int index = caller ? mLayout->indexOf(caller) : -1;
-  if (index != -1 && index > 1) {
+  if (index > 1) {
     assert(mLayout->itemAt(index - 1)->widget());  // must be preceeded by a QLabel widget
     const QLabel *label = qobject_cast<QLabel *>(mLayout->itemAt(index - 1)->widget());
     if (label) {
       const QString proto = label->text();
-      WbProtoManager::instance()->removeImportableExternProto(proto);
+      assert(WbWorld::instance());
+      WbProtoManager::instance()->removeImportableExternProto(proto, WbWorld::instance()->root());
       updateContents();  // regenerate panel
       emit changed(true);
+    }
+  }
+}
+
+void WbExternProtoEditor::stopEditing() {
+  clearLayout();
+}
+
+void WbExternProtoEditor::clearLayout() {
+  for (int i = mLayout->count() - 1; i >= 0; --i) {
+    QWidget *const widget = mLayout->itemAt(i)->widget();
+    if (widget) {
+      layout()->removeWidget(widget);
+      delete widget;
     }
   }
 }

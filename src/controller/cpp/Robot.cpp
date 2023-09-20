@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -51,6 +51,7 @@
 #include <webots/Skin.hpp>
 #include <webots/Speaker.hpp>
 #include <webots/TouchSensor.hpp>
+#include <webots/VacuumGripper.hpp>
 
 #include <cassert>
 #include <cstdlib>
@@ -479,6 +480,17 @@ TouchSensor *Robot::createTouchSensor(const string &name) const {
   return new TouchSensor(name);
 }
 
+VacuumGripper *Robot::getVacuumGripper(const string &name) {
+  WbDeviceTag tag = wb_robot_get_device(name.c_str());
+  if (!Device::hasType(tag, WB_NODE_VACUUM_GRIPPER))
+    return NULL;
+  return dynamic_cast<VacuumGripper *>(getOrCreateDevice(tag));
+}
+
+VacuumGripper *Robot::createVacuumGripper(const string &name) const {
+  return new VacuumGripper(name);
+}
+
 Device *Robot::getDeviceFromTag(int tag) {
   if (tag == 0)
     return NULL;
@@ -588,6 +600,9 @@ Device *Robot::getOrCreateDevice(int tag) {
         break;
       case WB_NODE_TOUCH_SENSOR:
         deviceList[otherTag] = createTouchSensor(name);
+        break;
+      case WB_NODE_VACUUM_GRIPPER:
+        deviceList[otherTag] = createVacuumGripper(name);
         break;
       default:
         deviceList[otherTag] = NULL;

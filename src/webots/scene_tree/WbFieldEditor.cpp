@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 #include "WbAction.hpp"
 #include "WbActionManager.hpp"
+#include "WbApplication.hpp"
 #include "WbBoolEditor.hpp"
 #include "WbColorEditor.hpp"
 #include "WbDoubleEditor.hpp"
@@ -114,15 +115,21 @@ WbFieldEditor::WbFieldEditor(QWidget *parent) :
   }
   mStackedLayout->addWidget(mExternProtoEditor);
   connect(nodePane->nodeEditor(), &WbValueEditor::valueChanged, this, &WbFieldEditor::valueChanged);
+  connect(WbApplication::instance(), &WbApplication::worldLoadCompleted, this, &WbFieldEditor::refreshExternProtoEditor);
 
   mTitleLabel = new QLabel(this);
+  mTitleLabel->setObjectName("titleLabel");
   mTitleLabel->setAlignment(Qt::AlignCenter);
-
   QVBoxLayout *mainLayout = new QVBoxLayout(this);
-  mainLayout->addWidget(mTitleLabel);
-  mainLayout->addLayout(mStackedLayout);
+  QWidget *wrapper = new QWidget();
+  mainLayout->addWidget(wrapper);
+  wrapper->setObjectName("wrapper");
+  QVBoxLayout *intermediary = new QVBoxLayout();
+  wrapper->setLayout(intermediary);
+  intermediary->addWidget(mTitleLabel);
+  intermediary->addLayout(mStackedLayout);
   mainLayout->setContentsMargins(0, 0, 0, 0);
-
+  intermediary->setContentsMargins(0, 0, 0, 0);
   gMinimumSizeOffset = sizeHint() - mStackedLayout->sizeHint();
 
   setCurrentWidget(0);
@@ -133,6 +140,12 @@ WbFieldEditor::~WbFieldEditor() {
 
 WbValueEditor *WbFieldEditor::currentEditor() const {
   return static_cast<WbValueEditor *>(mStackedLayout->currentWidget());
+}
+
+void WbFieldEditor::refreshExternProtoEditor() {
+  WbExternProtoEditor *editor = dynamic_cast<WbExternProtoEditor *>(mExternProtoEditor);
+  if (currentEditor() == editor)
+    editor->updateContents();
 }
 
 void WbFieldEditor::setTitle(const QString &title) {

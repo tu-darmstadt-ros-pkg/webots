@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,12 +22,14 @@
 #include "WbMatter.hpp"
 #include "WbNodeUtilities.hpp"
 #include "WbOdeGeomData.hpp"
+#include "WbPose.hpp"
 #include "WbRay.hpp"
 #include "WbResizeManipulator.hpp"
 #include "WbSFBool.hpp"
 #include "WbSFInt.hpp"
 #include "WbSimulationState.hpp"
 #include "WbTransform.hpp"
+#include "WbVrmlNodeUtilities.hpp"
 #include "WbWrenRenderingContext.hpp"
 
 #include <wren/config.h>
@@ -89,7 +91,7 @@ void WbCylinder::createWrenObjects() {
   if (isInBoundingObject()) {
     connect(WbWrenRenderingContext::instance(), &WbWrenRenderingContext::lineScaleChanged, this, &WbCylinder::updateLineScale);
 
-    if (mSubdivision->value() < MIN_BOUNDING_OBJECT_CIRCLE_SUBDIVISION && !WbNodeUtilities::hasAUseNodeAncestor(this))
+    if (mSubdivision->value() < MIN_BOUNDING_OBJECT_CIRCLE_SUBDIVISION && !WbVrmlNodeUtilities::hasAUseNodeAncestor(this))
       // silently reset the subdivision on node initialization
       mSubdivision->setValue(MIN_BOUNDING_OBJECT_CIRCLE_SUBDIVISION);
   }
@@ -102,9 +104,9 @@ void WbCylinder::createWrenObjects() {
 void WbCylinder::setResizeManipulatorDimensions() {
   WbVector3 scale(mRadius->value(), mRadius->value(), mHeight->value());
 
-  WbTransform *transform = upperTransform();
-  if (transform)
-    scale *= transform->absoluteScale();
+  const WbTransform *const up = upperTransform();
+  if (up)
+    scale *= up->absoluteScale();
 
   if (isAValidBoundingObject())
     scale *= 1.0f + (wr_config_get_line_scale() / LINE_SCALE_FACTOR);
@@ -121,7 +123,7 @@ void WbCylinder::createResizeManipulator() {
 bool WbCylinder::areSizeFieldsVisibleAndNotRegenerator() const {
   const WbField *const heightField = findField("height", true);
   const WbField *const radiusField = findField("radius", true);
-  return WbNodeUtilities::isVisible(heightField) && WbNodeUtilities::isVisible(radiusField) &&
+  return WbVrmlNodeUtilities::isVisible(heightField) && WbVrmlNodeUtilities::isVisible(radiusField) &&
          !WbNodeUtilities::isTemplateRegeneratorField(heightField) && !WbNodeUtilities::isTemplateRegeneratorField(radiusField);
 }
 
@@ -135,7 +137,7 @@ bool WbCylinder::sanitizeFields() {
   if (WbFieldChecker::resetIntIfNotInRangeWithIncludedBounds(this, mSubdivision, 3, 1000, 3))
     return false;
   if (mSubdivision->value() < MIN_BOUNDING_OBJECT_CIRCLE_SUBDIVISION && isInBoundingObject() &&
-      !WbNodeUtilities::hasAUseNodeAncestor(this)) {
+      !WbVrmlNodeUtilities::hasAUseNodeAncestor(this)) {
     parsingWarn(tr("'subdivision' value has no effect to physical 'boundingObject' geometry. "
                    "A minimum value of %2 is used for the representation.")
                   .arg(MIN_BOUNDING_OBJECT_CIRCLE_SUBDIVISION));
@@ -307,6 +309,17 @@ void WbCylinder::updateScale() {
   wr_transform_set_scale(wrenNode(), scale);
 }
 
+QStringList WbCylinder::fieldsToSynchronizeWithX3D() const {
+  QStringList fields;
+  fields << "radius"
+         << "height"
+         << "subdivision"
+         << "bottom"
+         << "side"
+         << "top";
+  return fields;
+}
+
 /////////////////
 // ODE Objects //
 /////////////////
@@ -435,11 +448,11 @@ double WbCylinder::computeDistance(const WbRay &ray) const {
 double WbCylinder::computeLocalCollisionPoint(WbVector3 &point, int &faceIndex, const WbRay &ray) const {
   WbVector3 direction(ray.direction());
   WbVector3 origin(ray.origin());
-  WbTransform *transform = upperTransform();
-  if (transform) {
-    direction = ray.direction() * transform->matrix();
+  const WbPose *const up = upperPose();
+  if (up) {
+    direction = ray.direction() * up->matrix();
     direction.normalize();
-    origin = transform->matrix().pseudoInversed(ray.origin());
+    origin = up->matrix().pseudoInversed(ray.origin());
     origin /= absoluteScale();
   }
 
@@ -512,14 +525,14 @@ void WbCylinder::recomputeBoundingSphere() const {
   const bool top = mTop->value();
   const bool side = mSide->value();
   const bool bottom = mBottom->value();
-  const double halfHeight = scaledHeight() / 2.0;
-  const double r = scaledRadius();
+  const double halfHeight = mHeight->value() / 2.0;
+  const double r = mRadius->value();
 
   if ((top + side + bottom) == 0)  // it is empty
     mBoundingSphere->empty();
   else if ((top + side + bottom) == 1 && !side) {  // just one disk
     const double center = top ? halfHeight : -halfHeight;
-    mBoundingSphere->set(WbVector3(0, center, 0), r);
+    mBoundingSphere->set(WbVector3(0, 0, center), r);
   } else
     mBoundingSphere->set(WbVector3(), WbVector3(r, halfHeight, 0).length());
 }

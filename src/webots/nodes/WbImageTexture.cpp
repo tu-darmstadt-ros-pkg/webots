@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 #include "WbAbstractAppearance.hpp"
 #include "WbApplication.hpp"
 #include "WbApplicationInfo.hpp"
+#include "WbDownloadManager.hpp"
 #include "WbDownloader.hpp"
 #include "WbField.hpp"
 #include "WbFieldChecker.hpp"
@@ -47,7 +48,6 @@
 
 #include <utility>
 
-QSet<QString> WbImageTexture::cQualityChangedTexturesList;
 static QMap<QString, std::pair<const QImage *, int>> gImagesMap;
 
 void WbImageTexture::init() {
@@ -121,14 +121,11 @@ void WbImageTexture::downloadAssets() {
   if (!WbUrl::isWeb(completeUrl) || WbNetwork::instance()->isCachedWithMapUpdate(completeUrl))
     return;
 
-  if (mDownloader && mDownloader->hasFinished())
-    delete mDownloader;
-
-  mDownloader = new WbDownloader(this);
+  delete mDownloader;
+  mDownloader = WbDownloadManager::instance()->createDownloader(QUrl(completeUrl), this);
   if (!WbWorld::instance()->isLoading() || mIsShallowNode)  // URL changed from the scene tree or supervisor
     connect(mDownloader, &WbDownloader::complete, this, &WbImageTexture::downloadUpdate);
-
-  mDownloader->download(QUrl(completeUrl));
+  mDownloader->download();
 }
 
 void WbImageTexture::downloadUpdate() {
@@ -221,14 +218,6 @@ bool WbImageTexture::loadTextureData(QIODevice *device) {
     Qt::TransformationMode mode = (quality % 2) ? Qt::SmoothTransformation : Qt::FastTransformation;
     QImage tmp = mImage->scaled(w, h, Qt::KeepAspectRatio, mode);
     mImage->swap(tmp);
-
-    if (WbWorld::isX3DStreaming()) {
-      const QString &tmpFileName = WbStandardPaths::webotsTmpPath() + QFileInfo(path()).fileName();
-      if (mImage->save(tmpFileName))
-        cQualityChangedTexturesList.insert(path());
-      else
-        warn(tr("Cannot save texture with reduced quality to temporary file '%1'.").arg(tmpFileName));
-    }
   }
 
   return true;
@@ -245,12 +234,9 @@ void WbImageTexture::updateWrenTexture() {
   if (mUrl->size() == 0)
     return;
 
-  const QString &completeUrl = WbUrl::computePath(this, "url", mUrl->item(0));
+  const QString &completeUrl = WbUrl::computePath(this, "url", mUrl->item(0), true);
   if (completeUrl.isEmpty())
     return;
-
-  if (completeUrl == WbUrl::missingTexture())
-    warn(tr("Texture '%1' not found.").arg(mUrl->item(0)));
 
   // Only load the image from disk if the texture isn't already in the cache
   WrTexture2d *texture = wr_texture_2d_copy_from_cache(completeUrl.toUtf8().constData());
@@ -285,8 +271,7 @@ void WbImageTexture::updateWrenTexture() {
   }
 
   mWrenTexture = WR_TEXTURE(texture);
-  if (mDownloader != NULL)
-    delete mDownloader;
+  delete mDownloader;
   mDownloader = NULL;
 }
 
@@ -555,12 +540,8 @@ void WbImageTexture::exportNodeFields(WbWriter &writer) const {
     else {
       if (writer.isWritingToFile())
         urlFieldValue->setItem(i, WbUrl::exportTexture(this, mUrl, i, writer));
-      else {
-        if (cQualityChangedTexturesList.contains(completeUrl))
-          completeUrl = WbStandardPaths::webotsTmpPath() + QFileInfo(mUrl->item(i)).fileName();
-
+      else
         urlFieldValue->setItem(i, WbUrl::expressRelativeToWorld(completeUrl));
-      }
     }
   }
 
@@ -571,13 +552,12 @@ void WbImageTexture::exportNodeFields(WbWriter &writer) const {
   findField("filtering", true)->write(writer);
 
   if (writer.isX3d()) {
-    writer << " isTransparent=\'" << (mIsMainTextureTransparent ? "true" : "false") << "\'";
     if (!mRole.isEmpty())
       writer << " role=\'" << mRole << "\'";
   }
 }
 
-void WbImageTexture::exportShallowNode(WbWriter &writer) const {
+void WbImageTexture::exportShallowNode(const WbWriter &writer) const {
   if (!writer.isX3d() || mUrl->size() == 0)
     return;
 
@@ -585,4 +565,13 @@ void WbImageTexture::exportShallowNode(WbWriter &writer) const {
   // 'webots://' since this case would be converted to a remote one that targets the current branch
   if (!WbUrl::isWeb(mUrl->item(0)) && !WbUrl::isLocalUrl(mUrl->item(0)) && !WbWorld::isX3DStreaming())
     WbUrl::exportTexture(this, mUrl, 0, writer);
+}
+
+QStringList WbImageTexture::fieldsToSynchronizeWithX3D() const {
+  QStringList fields;
+  fields << "url"
+         << "repeatS"
+         << "repeatT"
+         << "filtering";
+  return fields;
 }

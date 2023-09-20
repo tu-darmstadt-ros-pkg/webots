@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -81,6 +81,15 @@ void WbLidar::init() {
 
   mTcpImage = NULL;
   mTcpCloudPoints = NULL;
+
+  // backward compatibility
+  WbSFBool *sphericalField = findSFBool("spherical");
+  if (!sphericalField->value()) {  // Deprecated in Webots R2023
+    parsingWarn("Deprecated 'spherical' field, please use the 'projection' field instead.");
+    if (mProjection->value() == "cylindrical")
+      mProjection->setValue("planar");
+    sphericalField->setValue(true);
+  }
 }
 
 WbLidar::WbLidar(WbTokenizer *tokenizer) : WbAbstractCamera("Lidar", tokenizer) {
@@ -222,14 +231,20 @@ void WbLidar::postPhysicsStep() {
 }
 
 void WbLidar::write(WbWriter &writer) const {
-  if (writer.isWebots())
+  if (writer.isWebots() || writer.isUrdf())
     WbBaseNode::write(writer);
-  else {
-    WbBaseNode::write(writer);
-    WbSolid *s = solidEndPoint();
-    if (s)
-      s->write(writer);
-  }
+  else
+    writeExport(writer);
+}
+
+void WbLidar::exportNodeSubNodes(WbWriter &writer) const {
+  WbAbstractCamera::exportNodeSubNodes(writer);
+  if (writer.isWebots() || writer.isUrdf())
+    return;
+
+  WbSolid *s = solidEndPoint();
+  if (s)
+    s->write(writer);
 }
 
 void WbLidar::addConfigureToStream(WbDataStream &stream, bool reconfigure) {
@@ -290,6 +305,9 @@ void WbLidar::handleMessage(QDataStream &stream) {
     if (!hasBeenSetup()) {
       setup();
       mSendMemoryMappedFile = true;
+    } else if (mHasExternControllerChanged) {
+      mSendMemoryMappedFile = true;
+      mHasExternControllerChanged = false;
     }
 
     return;
@@ -457,6 +475,7 @@ void WbLidar::createWrenCamera() {
   mIsActuallyRotating = mType->value().startsWith('r', Qt::CaseInsensitive);
 
   WbAbstractCamera::createWrenCamera();
+  applyCameraSettings();
   applyMaxRangeToWren();
   applyResolutionToWren();
   applyTiltAngleToWren();

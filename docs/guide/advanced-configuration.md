@@ -9,12 +9,13 @@ The version of Webots for the Docker image is automatically computed from the he
 For example if the world file starts with the following line:
 
 ```
-#VRML_SIM R2022b utf8
+#VRML_SIM {{ webots.version.major }} utf8
 ```
+**Note**: Webots versions lower that R2022b are not supported.
 
 The simulation server will create a `Dockerfile` starting with:
 ```
-FROM docker image cyberbotics/webots:R2022b-ubuntu20.04
+FROM docker image cyberbotics/webots.cloud:{{ webots.version.major }}-ubuntu22.04
 ```
 
 Running Webots inside a Docker container is a very little overhead, but guarantees that the simulation server remains secure, regardless of the running simulations.
@@ -45,21 +46,21 @@ This can be achieve with svn on the master branch:
 
 `svn checkout https://github.com/cyberbotics/webots/branches/master/projects/languages/python`
 
-Or on the R2022b tag:
+Or on the {{ webots.version.major }} tag:
 
-`svn checkout https://github.com/cyberbotics/webots/tags/R2022b/projects/languages/python`
+`svn checkout https://github.com/cyberbotics/webots/tags/{{ webots.version.major }}/projects/languages/python`
 
 To check if a branch or a tag exists:
 
 `svn ls https://github.com/cyberbotics/webots/branches/master`
 
-`svn ls https://github.com/cyberbotics/webots/tags/R2022b`
+`svn ls https://github.com/cyberbotics/webots/tags/{{ webots.version.major }}`
 
 `git ls-remote --quiet --heads https://github.com/cyberbotics/webots.git master`
 
-`git ls-remote --quiet --tags https://github.com/cyberbotics/webots.git R2022b`
+`git ls-remote --quiet --tags https://github.com/cyberbotics/webots.git {{ webots.version.major }}`
 
-`git ls-remote --quiet https://github.com/cyberbotics/webots.git R2022b` will tell whether `R2022b` is a branch or a tag.
+`git ls-remote --quiet https://github.com/cyberbotics/webots.git {{ webots.version.major }}` will tell whether `{{ webots.version.major }}` is a branch or a tag.
 
 ### Tips and Troubleshooting
 
@@ -77,6 +78,7 @@ FROM my_name/my_webots_repo:previous_webots_tag
 COPY /path_to_the_configuation_file/Webots-R202??.conf /root/.config/Cyberbotics/Webots-R202??.conf
 ```
 
+**Note**: This is already implemented in the Docker images provided by Cyberbotics.
 #### Put the Assets in the Docker
 Webots (in the docker) will have to load the world first. To reduce this loading time, it is possible to put the assets directly in the docker such that Webots will not need to download them from the web.
 
@@ -89,3 +91,47 @@ COPY path_to_your_assets_folder/assets /root/.cache/Cyberbotics/Webots/assets
 To work, your assets folder must correspond to the version of Webots that is in the docker.
 
 For more informations about assets, see [here](installation-procedure.md#asset-cache-download).
+
+**Note**: This is already implemented in the Docker images provided by Cyberbotics.
+
+#### Increase the Number of Parallel Simulations Supported by the Server
+
+The server can become saturated because both its CPU and GPU RAM are full.
+What happens normally is that the GPU and CPU will grow in parallel as new simulations are added.
+In most cases the GPU RAM will be saturated first.
+Once it happens, the CPU RAM will take the share of the GPU and therefore fill up faster.
+Once the CPU RAM is full, the swap will take over.
+Once the swap is full, the computer will crash if we try to open more simulations.
+
+##### Enable the Zram
+
+[Zram](https://en.wikipedia.org/wiki/Zram) is a Linux kernel module that will compress the least used parts of the RAM.
+It has the same role as swap but is normally faster.
+
+To enable it:
+```
+sudo apt-get install zram-config
+sudo service zram-config start
+```
+
+To check the zram installation:
+```
+cat /proc/swaps
+```
+
+It should display something like:
+```
+Filename                                Type        Size    Used   Priority
+/dev/sda3                               partition   9215996 0      -1
+/dev/zram0                              partition   755740  8104    5
+/dev/zram1                              partition   755740  8004    5
+/dev/zram2                              partition   755740  8120    5
+/dev/zram3                              partition   755740  8064    5
+```
+
+#### Increase the Size of the Swap
+
+Increasing the size of the swap will allow the server to support more simulations in parallel.
+However, when the swap is filling-up, you may observe a performance drop.
+
+You can follow [this tutorial](https://linuxhandbook.com/increase-swap-ubuntu/) to increase the size of the swap.

@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,7 +46,7 @@ public:
   // constructor
   // the world is read using 'tokenizer': the file syntax must have been checked with WbParser
   // if 'tokenizer' is not specified, the world is created with default WorldInfo and Viewpoint nodes
-  WbWorld(WbTokenizer *tokenizer = NULL);
+  explicit WbWorld(WbTokenizer *tokenizer = NULL);
 
   // destructor
   virtual ~WbWorld();
@@ -128,7 +128,7 @@ public:
   void addRobotIfNotAlreadyPresent(WbRobot *robot);
 
   // return the list of texture files used in this world (no duplicates)
-  QStringList listTextureFiles() const;
+  QList<std::pair<QString, WbMFString *>> listTextureFiles() const;
 
   // shortcut
   double basicTimeStep() const { return mWorldInfo->basicTimeStep(); }
@@ -158,6 +158,7 @@ signals:
   void worldLoadingHasProgressed(int percent);
   void viewpointChanged();
   void robotAdded(WbRobot *robot);
+  void robotRemoved(WbRobot *robot);
   void resetRequested(bool restartControllers);
 
 public slots:

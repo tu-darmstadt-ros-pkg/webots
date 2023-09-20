@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-# Copyright 1996-2022 Cyberbotics Ltd.
+# Copyright 1996-2023 Cyberbotics Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Makes local PROTO references extern"""
+"""Makes local PROTO references extern to fix the compatibility between R2022a and R2022b"""
 
 
 import os
@@ -78,19 +78,27 @@ for file, path in local_files.items():
 
     contents = contents.splitlines(keepends=True)
 
-    version = re.search(r'^#\s*VRML_SIM\s+([a-zA-Z0-9\-]+)\s+utf8', contents[0])
-    if not version.groups():
+    header = []
+    index = None
+    for n, line in enumerate(contents):
+        if line.replace(' ', '').replace('\t', '') == '\n':
+            continue
+        clean_line = line.strip()
+        if clean_line.startswith('#'):
+            header.append(clean_line + '\n')
+        else:
+            index = n
+            break
+
+    if not header:
         raise RuntimeError(f'File {path.name} is invalid because it has no header')
+    version = re.search(r'^#\s*VRML_SIM\s+([a-zA-Z0-9\-]+)\s+utf8', header[0])
+    if not version:
+        raise RuntimeError(f'The header of {path.name} is not recognized')
     elif (version.group(1) >= 'R2022b'):
         print(f'Skipping "{path.name}" because header is already R2022b or higher')
         continue
 
-    # find first non-commented line
-    index = None
-    for n, line in enumerate(contents):
-        if not line.startswith('#'):
-            index = n
-            break
     if index:
         # consume all the empty lines following the index or previous attempts at declaring EXTERNPROTO
         while contents[index] == '\n' or contents[index].startswith('EXTERNPROTO'):
@@ -128,7 +136,9 @@ for file, path in local_files.items():
         contents.insert(index, '\n')
 
     # update proto header
-    contents[0] = '#VRML_SIM R2022b utf8\n'
+    contents = contents[n:]  # remove old header
+    header[0] = '#VRML_SIM R2022b utf8\n'
+    contents = header + contents
 
     # write to file
     with open(path, "w") as f:

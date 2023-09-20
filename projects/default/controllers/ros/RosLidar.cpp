@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -94,7 +94,7 @@ ros::Publisher RosLidar::createPublisher(std::map<std::string, std::string> *top
 // get image from the Lidar and publish it
 void RosLidar::publishValue(ros::Publisher publisher) {
   const char *rangeImageVector;
-  rangeImageVector = (const char *)(void *)mLidar->getRangeImage();
+  rangeImageVector = static_cast<const char *>(static_cast<void *>(const_cast<float *>(mLidar->getRangeImage())));
   sensor_msgs::Image image;
   image.header.stamp = ros::Time::now();
   if (mFrameOverride != "") {
@@ -249,7 +249,8 @@ bool RosLidar::enablePointCloudCallback(webots_ros::set_bool::Request &req, webo
 
 bool RosLidar::getLayerRangeImage(webots_ros::lidar_get_layer_range_image::Request &req,
                                   webots_ros::lidar_get_layer_range_image::Response &res) {
-  const char *rangeImageVector = (const char *)(void *)mLidar->getLayerRangeImage(req.layer);
+  const char *rangeImageVector =
+    static_cast<const char *>(static_cast<void *>(const_cast<float *>(mLidar->getLayerRangeImage(req.layer))));
   res.image.header.stamp = ros::Time::now();
   if (mFrameOverride != "") {
     res.image.header.frame_id = mFrameOverride;

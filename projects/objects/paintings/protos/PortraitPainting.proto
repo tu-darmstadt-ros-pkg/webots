@@ -1,6 +1,8 @@
-#VRML_SIM R2022b utf8
+#VRML_SIM R2023b utf8
 # license: Copyright Cyberbotics Ltd. Licensed for use only with Webots.
 # license url: https://cyberbotics.com/webots_assets_license
+# documentation url: https://webots.cloud/run?url=https://github.com/cyberbotics/webots/blob/released/projects/objects/paintings/protos/PortraitPainting.proto
+# keywords: household/living room
 # A painting (0.05 x 0.82 x 1.01 m).
 
 EXTERNPROTO "webots://projects/appearances/protos/VarnishedPine.proto"
@@ -10,7 +12,7 @@ PROTO PortraitPainting [
   field SFRotation rotation    0 0 1 0
   field SFString   name        "portrait painting"
   field SFColor    color       1 1 1                             # Defines the color of the painting.
-  field MFString   textureUrl  "webots://projects/objects/paintings/protos/textures/portrait_painting.jpg"  # Defines the texure used for the painting.
+  field MFString   textureUrl  "textures/portrait_painting.jpg"  # Defines the texure used for the painting.
 ]
 {
 Solid {

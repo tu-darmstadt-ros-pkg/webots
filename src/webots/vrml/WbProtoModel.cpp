@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 #include "WbField.hpp"
 #include "WbFieldModel.hpp"
+#include "WbFileUtil.hpp"
 #include "WbLog.hpp"
 #include "WbNetwork.hpp"
 #include "WbNode.hpp"
@@ -53,11 +54,12 @@ WbProtoModel::WbProtoModel(WbTokenizer *tokenizer, const QString &worldPath, con
   mInfo.clear();
   const QString &tokenizerInfo = tokenizer->info();
   if (!tokenizerInfo.isEmpty() && !tokenizerInfo.trimmed().isEmpty()) {
-    const QStringList info = tokenizerInfo.split("\n");  // # comments
-    for (int i = 0; i < info.size(); ++i) {
-      if (!info.at(i).startsWith("tags:") && !info.at(i).startsWith("license:") && !info.at(i).startsWith("license url:") &&
-          !info.at(i).startsWith("documentation url:") && !info.at(i).startsWith("template language:"))
-        mInfo += info.at(i) + "\n";
+    const QStringList headerInfo = tokenizerInfo.split("\n");  // # comments
+    for (int i = 0; i < headerInfo.size(); ++i) {
+      if (!headerInfo.at(i).startsWith("tags:") && !headerInfo.at(i).startsWith("license:") &&
+          !headerInfo.at(i).startsWith("license url:") && !headerInfo.at(i).startsWith("documentation url:") &&
+          !headerInfo.at(i).startsWith("template language:") && !headerInfo.at(i).startsWith("keywords:"))
+        mInfo += headerInfo.at(i) + "\n";
     }
     mInfo.chop(1);
   }
@@ -233,7 +235,6 @@ WbProtoModel::WbProtoModel(WbTokenizer *tokenizer, const QString &worldPath, con
       readBaseType = false;
 
       if (mDerived) {
-        QString protoInfo, baseNodeType;
         bool error = false;
         try {
           baseTypeList.append(mName);
@@ -245,9 +246,9 @@ WbProtoModel::WbProtoModel(WbTokenizer *tokenizer, const QString &worldPath, con
             QStringList derivedParameterNames = parameterNames();
             QStringList baseParameterNames = baseProtoModel->parameterNames();
             baseTypeSlotType = baseProtoModel->slotType();
-            foreach (QString name, derivedParameterNames) {
-              if (baseParameterNames.contains(name))
-                sharedParameterNames.append(name);
+            foreach (QString derivedName, derivedParameterNames) {
+              if (baseParameterNames.contains(derivedName))
+                sharedParameterNames.append(derivedName);
             }
           } else
             error = true;
@@ -405,7 +406,7 @@ WbNode *WbProtoModel::generateRoot(const QVector<WbField *> &parameters, const Q
   // aliasing error reports are based on the header, so the error offset has no sense here
   tokenizer.setErrorOffset(0);
 
-  setupAliasing(root, &tokenizer);
+  verifyAliasing(root, &tokenizer);
 
   if (mTemplate) {
     root->setProtoInstanceTemplateContent(content.toUtf8());
@@ -453,7 +454,7 @@ const QString WbProtoModel::projectPath() const {
     if (WbUrl::isWeb(protoPath))
       protoPath.replace(QRegularExpression(WbUrl::remoteWebotsAssetRegex(false)), WbStandardPaths::webotsHomePath());
 #ifdef __APPLE__
-    if (protoPath.startsWith(WbStandardPaths::webotsHomePath()))
+    if (WbFileUtil::isLocatedInInstallationDirectory(protoPath, true))
       protoPath.insert(WbStandardPaths::webotsHomePath().length(), "Contents/");
 #endif
 
@@ -480,8 +481,15 @@ QStringList WbProtoModel::parameterNames() const {
   return names;
 }
 
-void WbProtoModel::setupNodeAliasing(WbNode *node, WbFieldModel *param, WbTokenizer *tokenizer, bool searchInParameters,
-                                     bool &ok) {
+void WbProtoModel::setIsTemplate(bool value) {
+  mTemplate = value;
+  if (mTemplate && mIsDeterministic)
+    // if ancestor is nonDeterministic this proto can't be either
+    mIsDeterministic = mAncestorProtoModel->isDeterministic();
+}
+
+void WbProtoModel::verifyNodeAliasing(WbNode *node, WbFieldModel *param, WbTokenizer *tokenizer, bool searchInParameters,
+                                      bool &ok) const {
   QVector<WbField *> fields;
   if (searchInParameters)
     fields = node->parameters();
@@ -491,10 +499,9 @@ void WbProtoModel::setupNodeAliasing(WbNode *node, WbFieldModel *param, WbTokeni
   // search self
   foreach (WbField *field, fields) {
     if (field->alias() == param->name()) {
-      if (field->type() == param->type()) {
-        mParameterAliases.insert(field->name(), field->alias());
+      if (field->type() == param->type())
         ok = true;
-      } else
+      else
         tokenizer->reportError(
           tr("Type mismatch between '%1' PROTO parameter and field '%2'").arg(param->name(), field->name()),
           param->nameToken());
@@ -506,14 +513,14 @@ void WbProtoModel::setupNodeAliasing(WbNode *node, WbFieldModel *param, WbTokeni
   foreach (WbNode *subnode, l) {
     if (subnode->isProtoInstance())
       // search only in parameters of sub protos: fields are in sub proto parameter scope
-      setupNodeAliasing(subnode, param, tokenizer, true, ok);
+      verifyNodeAliasing(subnode, param, tokenizer, true, ok);
     else
-      setupNodeAliasing(subnode, param, tokenizer, false, ok);
+      verifyNodeAliasing(subnode, param, tokenizer, false, ok);
   }
 }
 
-// setup that each proto parameter has at least one matching IS parameter
-void WbProtoModel::setupAliasing(WbNode *root, WbTokenizer *tokenizer) {
+// verify that each proto parameter has at least one matching IS parameter
+void WbProtoModel::verifyAliasing(WbNode *root, WbTokenizer *tokenizer) const {
   if (!root)
     return;
 
@@ -521,7 +528,7 @@ void WbProtoModel::setupAliasing(WbNode *root, WbTokenizer *tokenizer) {
     if (param->isUnconnected())
       continue;
     bool ok = false;
-    setupNodeAliasing(root, param, tokenizer, isDerived(), ok);
+    verifyNodeAliasing(root, param, tokenizer, isDerived(), ok);
     if (!isTemplate() && !ok)
       tokenizer->reportError(tr("PROTO parameter '%1' has no matching IS field").arg(param->name()), param->nameToken());
   }
@@ -531,37 +538,37 @@ QStringList WbProtoModel::documentationBookAndPage(bool isRobot, bool skipProtoT
   QStringList bookAndPage;
   if (isRobot) {
     // check for robot doc
-    const QString &name = mName.toLower();
+    const QString &nodeName = mName.toLower();
 
-    const QString page("guide/" + name + ".md");
+    const QString page("guide/" + nodeName + ".md");
     if (checkIfDocumentationPageExist(page)) {
-      bookAndPage << "guide" << name;
+      bookAndPage << "guide" << nodeName;
       return bookAndPage;
     }
   } else {
     // check for object doc
     const QDir &objectsDir(WbStandardPaths::projectsPath() + "objects");
     QDir dir(projectPath());
-    QString name = dir.dirName().replace('_', '-');
+    QString directoryName = dir.dirName().replace('_', '-');
     while (!dir.isRoot()) {
       if (dir == objectsDir) {
-        const QString page("guide/object-" + name + ".md");
+        const QString page("guide/object-" + directoryName + ".md");
         if (checkIfDocumentationPageExist(page)) {
           bookAndPage << "guide"
-                      << "object-" + name;
+                      << "object-" + directoryName;
           return bookAndPage;
         }
         break;
       }
-      name = dir.dirName().replace('_', '-');
+      directoryName = dir.dirName().replace('_', '-');
       if (!dir.cdUp())
         break;
     }
   }
   if (!skipProtoTag) {
-    const QString &documentationUrl = mDocumentationUrl;
-    if (!documentationUrl.isEmpty()) {
-      const QStringList &splittedPath = documentationUrl.split("doc/");
+    const QString &rawDocumentationUrl = mDocumentationUrl;
+    if (!rawDocumentationUrl.isEmpty()) {
+      const QStringList &splittedPath = rawDocumentationUrl.split("doc/");
       if (splittedPath.size() == 2) {
         const QString file(splittedPath[1].split('#')[0]);
         const QString page(file + ".md");

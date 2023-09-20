@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,10 +21,12 @@
 #include "WbMatter.hpp"
 #include "WbNodeUtilities.hpp"
 #include "WbOdeGeomData.hpp"
+#include "WbPose.hpp"
 #include "WbRay.hpp"
 #include "WbResizeManipulator.hpp"
 #include "WbSimulationState.hpp"
 #include "WbTransform.hpp"
+#include "WbVrmlNodeUtilities.hpp"
 #include "WbWorld.hpp"
 #include "WbWrenAbstractResizeManipulator.hpp"
 #include "WbWrenRenderingContext.hpp"
@@ -89,7 +91,7 @@ void WbBox::createWrenObjects() {
 
 void WbBox::setResizeManipulatorDimensions() {
   WbVector3 scale = size().abs();
-  WbTransform *transform = upperTransform();
+  const WbTransform *const transform = upperTransform();
   if (transform)
     scale *= transform->absoluteScale();
 
@@ -106,7 +108,7 @@ void WbBox::createResizeManipulator() {
 
 bool WbBox::areSizeFieldsVisibleAndNotRegenerator() const {
   const WbField *const sizeField = findField("size", true);
-  return WbNodeUtilities::isVisible(sizeField) && !WbNodeUtilities::isTemplateRegeneratorField(sizeField);
+  return WbVrmlNodeUtilities::isVisible(sizeField) && !WbNodeUtilities::isTemplateRegeneratorField(sizeField);
 }
 
 void WbBox::setSize(const WbVector3 &size) {
@@ -181,12 +183,18 @@ void WbBox::updateScale() {
   wr_transform_set_scale(wrenNode(), scale);
 }
 
+QStringList WbBox::fieldsToSynchronizeWithX3D() const {
+  QStringList fields;
+  fields << "size";
+  return fields;
+}
+
 /////////////////
 // ODE objects //
 /////////////////
 
 void WbBox::checkFluidBoundingObjectOrientation() {
-  const WbMatrix3 &m = upperTransform()->rotationMatrix();
+  const WbMatrix3 &m = upperPose()->rotationMatrix();
   const WbVector3 &zAxis = m.column(2);
   const WbVector3 &g = WbWorld::instance()->worldInfo()->gravityVector();
   const double alpha = zAxis.angle(-g);
@@ -362,10 +370,10 @@ double WbBox::computeDistance(const WbRay &ray) const {
 
 double WbBox::computeLocalCollisionPoint(WbVector3 &point, int &faceIndex, const WbRay &ray) const {
   WbRay localRay(ray);
-  WbTransform *transform = upperTransform();
-  if (transform) {
-    localRay.setDirection(ray.direction() * transform->matrix());
-    WbVector3 origin = transform->matrix().pseudoInversed(ray.origin());
+  const WbPose *const pose = upperPose();
+  if (pose) {
+    localRay.setDirection(ray.direction() * pose->matrix());
+    WbVector3 origin = pose->matrix().pseudoInversed(ray.origin());
     origin /= absoluteScale();
     localRay.setOrigin(origin);
     localRay.normalize();

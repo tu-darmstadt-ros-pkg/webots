@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -115,14 +115,14 @@ void WbFindReplaceDialog::setFindString(const QString &findWhat) {
 }
 
 WbTextFind::FindFlags WbFindReplaceDialog::findFlags() {
-  WbTextFind::FindFlags flags = WbTextFind::FIND_NONE;
+  int flags = WbTextFind::FIND_NONE;
   if (mRegExpCheckBox->isChecked())
-    flags = (WbTextFind::FindFlags)(flags | WbTextFind::FIND_REGULAR_EXPRESSION);
+    flags |= WbTextFind::FIND_REGULAR_EXPRESSION;
   if (mCaseSensitiveCheckBox->isChecked())
-    flags = (WbTextFind::FindFlags)(flags | WbTextFind::FIND_CASE_SENSITIVE);
+    flags |= WbTextFind::FIND_CASE_SENSITIVE;
   if (mWholeWordsCheckBox->isChecked())
-    flags = (WbTextFind::FindFlags)(flags | WbTextFind::FIND_WHOLE_WORDS);
-  return flags;
+    flags |= WbTextFind::FIND_WHOLE_WORDS;
+  return static_cast<WbTextFind::FindFlags>(flags);
 }
 
 bool WbFindReplaceDialog::find(WbTextFind *textFind, const QString &text, bool backwards, WbTextFind::FindFlags flags,

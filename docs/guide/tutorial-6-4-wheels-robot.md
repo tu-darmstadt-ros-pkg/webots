@@ -89,31 +89,6 @@ graph TD
 %end
 %end
 
-%figure "Low level representation of the 4 wheeled robot"
-%chart
-graph TD
-  Robot[[Robot](../reference/robot.md)] -->|physics| Physics1[[Physics](../reference/physics.md)]
-  Robot -->|boundingObject| USEBODY[USE BODY]
-  Robot -->|children| Shape1[[DEF BODY Shape](../reference/shape.md)]
-    Shape1 -->|geometry| Box[[Box](../reference/box.md)]
-    Shape1 -.- USEBODY
-  Robot -->|children| HingeJoint[[HingeJoint](../reference/hingejoint.md)]
-    HingeJoint -->|device| RotationalMotor[[RotationalMotor](../reference/rotationalmotor.md)]
-    HingeJoint -->|jointParameters| HingeJointParameters[[HingeJointParameters](../reference/hingejointparameters.md)]
-    HingeJoint -->|endPoint| Solid[[DEF WHEEL1 Solid](../reference/solid.md)]
-      Solid -->|physics| Physics2[[DEF WHEEL_PH Physics](../reference/physics.md)]
-      Solid -->|boundingObject| USEWHEEL[USE WHEEL]
-      Solid -->|children| Shape2[[DEF WHEEL Shape](../reference/shape.md)]
-          Shape2 -.- USEWHEEL
-          Shape2 -->|geometry| Cylinder[[Cylinder](../reference/cylinder.md)]
-  Robot -.->|children| OtherWheels["Other wheels (using WHEEL and WHEEL_PH)"]
-
-  style HingeJoint fill:#ffe4bf;
-  class Robot highlightedNode;
-  class Shape1,USEBODY,Transform,USEWHEEL secondaryNode;
-%end
-%end
-
 ### `HingeJoint`
 
 The initial position of the wheel is defined by the translation and the rotation fields of the [Solid](../reference/solid.md) node.
@@ -137,9 +112,6 @@ Some signs obviously have to be updated for other wheels.
 
 Now, let's implement the cylinder shape of the wheels.
 
-> **Hands on #4**: Complete the missing nodes to get the same structure as the one depicted in [this figure](#low-level-representation-of-the-4-wheeled-robot).
-Don't forget the [Physics](../reference/physics.md) nodes.
-
 For each [HingeJoint](../reference/hingejoint.md), there are three fields in which nodes need to be added.
 - **jointParameters**: Add a [HingeJointParameters](../reference/hingejointparameters.md) and configure the anchor (0.05 -0.06 0) and axis (0 1 0) fields.
   These values have to be modified according to the location of the wheel.
@@ -148,6 +120,34 @@ For each [HingeJoint](../reference/hingejoint.md), there are three fields in whi
 - **endPoint**: Add a [Solid](../reference/solid.md) node, then a [Shape](../reference/shape.md) node in the `children` field of the [Solid](../reference/solid.md), and finally, add a [Cylinder](../reference/cylinder.md) in the `geometry` field of the [Shape](../reference/shape.md) node.
   The [Cylinder](../reference/cylinder.md) should have a `radius` of `0.04` and a `height` of `0.02`.
 Set the color of the wheels to green.
+
+> **Hands on #4**: Complete the missing nodes to get the same structure as the one depicted in [this figure](#low-level-representation-of-the-4-wheeled-robot).
+Don't forget the [Physics](../reference/physics.md) nodes.
+
+%figure "Low level representation of the 4 wheeled robot"
+%chart
+graph TD
+  Robot[[Robot](../reference/robot.md)] -->|physics| Physics1[[Physics](../reference/physics.md)]
+  Robot -->|boundingObject| USEBODY[USE BODY]
+  Robot -->|children| Shape1[[DEF BODY Shape](../reference/shape.md)]
+    Shape1 -->|geometry| Box[[Box](../reference/box.md)]
+    Shape1 -.- USEBODY
+  Robot -->|children| HingeJoint[[HingeJoint](../reference/hingejoint.md)]
+    HingeJoint -->|device| RotationalMotor[[RotationalMotor](../reference/rotationalmotor.md)]
+    HingeJoint -->|jointParameters| HingeJointParameters[[HingeJointParameters](../reference/hingejointparameters.md)]
+    HingeJoint -->|endPoint| Solid[[DEF WHEEL1 Solid](../reference/solid.md)]
+      Solid -->|physics| Physics2[[DEF WHEEL_PH Physics](../reference/physics.md)]
+      Solid -->|boundingObject| USEWHEEL[USE WHEEL]
+      Solid -->|children| Shape2[[DEF WHEEL Shape](../reference/shape.md)]
+          Shape2 -.- USEWHEEL
+          Shape2 -->|geometry| Cylinder[[Cylinder](../reference/cylinder.md)]
+  Robot -.->|children| OtherWheels["Other wheels (using WHEEL and WHEEL_PH)"]
+
+  style HingeJoint fill:#ffe4bf;
+  class Robot highlightedNode;
+  class Shape1,USEBODY,USEWHEEL secondaryNode;
+%end
+%end
 
 
 ### Sensors
@@ -518,6 +518,8 @@ public class FourWheelsCollisionAvoidance {
 
 %tab "MATLAB"
 ```MATLAB
+function four_wheeled_collision_avoidance
+
 TIME_STEP = 64;
 ds = [];
 ds_names = [ "ds_right", "ds_left" ];
@@ -533,6 +535,7 @@ for i = 1:4
   wb_motor_set_velocity(wheels(i), 0.0);
 end
 avoid_obstacle_counter = 0;
+
 while wb_robot_step(TIME_STEP) ~= -1
   left_speed = 1.0;
   right_speed = 1.0;

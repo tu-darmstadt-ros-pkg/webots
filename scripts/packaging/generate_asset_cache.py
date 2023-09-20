@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-# Copyright 1996-2022 Cyberbotics Ltd.
+# Copyright 1996-2023 Cyberbotics Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#     https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,19 +27,18 @@ EXTENSIONS = [
 ]
 
 SKIPPED_DIRECTORIES = [
-    '/robot_windows/', '/thymio2_aseba/'
+    '/robot_windows/', '/docs/'
 ]
 
 # ensure WEBOTS_HOME is set and tag was provided
 if 'WEBOTS_HOME' in os.environ:
-    WEBOTS_HOME = os.environ['WEBOTS_HOME']
+    WEBOTS_HOME = os.path.normpath(os.environ['WEBOTS_HOME'])
 else:
     raise RuntimeError('Error, WEBOTS_HOME variable is not set.')
 
 
-def generate_asset_cache(tag):
-    with open(os.path.join(WEBOTS_HOME, 'resources', 'version.txt'), 'r') as file:
-        folder_name = f'assets-{file.readline().strip()}'
+def generate_asset_cache(tag, version_name):
+    folder_name = f'assets-{version_name}'
 
     # retrieve all assets
     assets = []
@@ -73,8 +72,10 @@ def generate_asset_cache(tag):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.exit('Missing argument: commit sha or tag.')
+    if len(sys.argv) != 3:
+        sys.exit('''Missing one or more arguments.
+            It should have the form: generate_asset_cache [commit sha or tag] [webots version name]''')
     else:
         tag = sys.argv[1]
-    generate_asset_cache(tag)
+        version_name = sys.argv[2]
+    generate_asset_cache(tag, version_name)

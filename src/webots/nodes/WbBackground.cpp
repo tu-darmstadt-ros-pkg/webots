@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,7 @@
 
 #include "WbApplication.hpp"
 #include "WbApplicationInfo.hpp"
+#include "WbDownloadManager.hpp"
 #include "WbDownloader.hpp"
 #include "WbField.hpp"
 #include "WbFieldChecker.hpp"
@@ -194,14 +195,11 @@ void WbBackground::downloadAsset(const QString &url, int index, bool postpone) {
     mIrradianceTexture[index - 6] = NULL;
   }
 
-  if (mDownloader[index] && mDownloader[index]->hasFinished())
-    delete mDownloader[index];
-
-  mDownloader[index] = new WbDownloader(this);
+  delete mDownloader[index];
+  mDownloader[index] = WbDownloadManager::instance()->createDownloader(QUrl(completeUrl), this);
   if (postpone)
     connect(mDownloader[index], &WbDownloader::complete, this, &WbBackground::downloadUpdate);
-
-  mDownloader[index]->download(QUrl(completeUrl));
+  mDownloader[index]->download();
 }
 
 void WbBackground::downloadAssets() {
@@ -431,11 +429,9 @@ bool WbBackground::loadTexture(int i) {
   // if a side is not defined, it should not even attempt to load the texture
   assert(mUrlFields[urlFieldIndex]->size() != 0);
 
-  QString url = WbUrl::computePath(this, gUrlNames(i), mUrlFields[urlFieldIndex]->item(0));
-  if (url == WbUrl::missingTexture() || url.isEmpty()) {
-    warn(tr("Texture not found: '%1'").arg(url));
+  QString url = WbUrl::computePath(this, gUrlNames(i), mUrlFields[urlFieldIndex]->item(0), true);
+  if (url == WbUrl::missingTexture() || url.isEmpty())
     return false;
-  }
 
   if (WbUrl::isWeb(url)) {
     if (WbNetwork::instance()->isCachedWithMapUpdate(url))
@@ -519,11 +515,9 @@ bool WbBackground::loadIrradianceTexture(int i) {
   if (mIrradianceUrlFields[urlFieldIndex]->size() == 0)
     return true;
 
-  QString url = WbUrl::computePath(this, gIrradianceUrlNames(i), mIrradianceUrlFields[urlFieldIndex]->item(0));
-  if (url.isEmpty()) {
-    warn(tr("%1IrradianceUrl not found: '%2'").arg(gDirections[i], url));
+  QString url = WbUrl::computePath(this, gIrradianceUrlNames(i), mIrradianceUrlFields[urlFieldIndex]->item(0), true);
+  if (url == WbUrl::missingTexture() || url.isEmpty())
     return false;
-  }
 
   if (WbUrl::isWeb(url)) {
     if (WbNetwork::instance()->isCachedWithMapUpdate(url))
@@ -700,11 +694,9 @@ void WbBackground::exportNodeFields(WbWriter &writer) const {
     else if (WbUrl::isWeb(imagePath))
       backgroundFileNames[i] = imagePath;
     else {
-      if (writer.isWritingToFile()) {
-        const QFileInfo cubeInfo(imagePath);
-        backgroundFileNames[i] = WbUrl::exportResource(this, imagePath, imagePath,
-                                                       writer.relativeTexturesPath() + cubeInfo.dir().dirName() + "/", writer);
-      } else
+      if (writer.isWritingToFile())
+        backgroundFileNames[i] = WbUrl::exportResource(this, imagePath, imagePath, writer.relativeTexturesPath(), writer);
+      else
         backgroundFileNames[i] = WbUrl::expressRelativeToWorld(imagePath);
     }
   }
@@ -720,11 +712,10 @@ void WbBackground::exportNodeFields(WbWriter &writer) const {
     else if (WbUrl::isWeb(irradiancePath))
       irradianceFileNames[i] = irradiancePath;
     else {
-      if (writer.isWritingToFile()) {
-        const QFileInfo cubeInfo(irradiancePath);
-        irradianceFileNames[i] = WbUrl::exportResource(this, irradiancePath, irradiancePath,
-                                                       writer.relativeTexturesPath() + cubeInfo.dir().dirName() + "/", writer);
-      } else
+      if (writer.isWritingToFile())
+        irradianceFileNames[i] =
+          WbUrl::exportResource(this, irradiancePath, irradiancePath, writer.relativeTexturesPath(), writer);
+      else
         irradianceFileNames[i] = WbUrl::expressRelativeToWorld(irradiancePath);
     }
   }

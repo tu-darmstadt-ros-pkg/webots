@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,25 +16,25 @@
 #define WB_NODE_UTILITIES_HPP
 
 //
-// Description: utility class allowing to query nodes in their tree context
-//              through static functions
+// Description: utility class allowing to query WbBaseNode instances in their tree context
+//              through static functions.
+//              For generic node functions please refer to WbVrmlNodeUtilities namespace.
 //
 
-#include <QtCore/QList>
-#include <cstddef>
 #include "WbNode.hpp"
+#include "WbOdeTypes.hpp"
 
-class WbAbstractTransform;
+#include <QtCore/QList>
+
 class WbBaseNode;
 class WbBoundingSphere;
 class WbField;
 class WbMatter;
-class WbNode;
-class WbProtoModel;
 class WbRay;
 class WbRobot;
 class WbShape;
 class WbSolid;
+class WbPose;
 class WbTransform;
 
 class QString;
@@ -50,13 +50,8 @@ namespace WbNodeUtilities {
   // find the closest WbTransform ancestor
   WbTransform *findUpperTransform(const WbNode *node);
 
-  // find the closest template ancestor in which the modified node is contained in template field
-  // which requires a template instance regeneration
-  WbNode *findUpperTemplateNeedingRegeneration(WbNode *modifiedNode);
-
-  // find the closest template ancestor of given field in which the modified field is contained
-  // in template field which requires a template instance regeneration
-  WbNode *findUpperTemplateNeedingRegenerationFromField(WbField *modifiedField, WbNode *parentNode);
+  // find the closest WbPose ancestor
+  WbPose *findUpperPose(const WbNode *node);
 
   // find the closest WbSolid ancestor
   WbSolid *findUpperSolid(const WbNode *node);
@@ -69,15 +64,15 @@ namespace WbNodeUtilities {
   WbNode *findUpperNodeByType(const WbNode *node, int nodeType, int searchDegrees = 0);
 
   // return if this node contains descendant nodes of the specified types
-  bool hasDescendantNodesOfType(const WbNode *node, QList<int> nodeTypes);
+  bool hasDescendantNodesOfType(const WbNode *node, const QList<int> &nodeTypes);
 
   // return all the descendant nodes fulfilling the specified type condition
   // typeCondition is a function that checks the type of the node
   // if recursive is set to FALSE children of the descendant node having the specified type are not inspected
   QList<WbNode *> findDescendantNodesOfType(WbNode *node, bool (&typeCondition)(WbBaseNode *), bool recursive);
 
-  // find the uppermost WbTransform ancestor (may be the node itself)
-  WbTransform *findUppermostTransform(const WbNode *node);
+  // find the uppermost WbPose ancestor (may be the node itself)
+  WbPose *findUppermostPose(const WbNode *node);
 
   // find the uppermost WbSolid ancestor (may be the node itself)
   WbSolid *findUppermostSolid(const WbNode *node);
@@ -91,21 +86,15 @@ namespace WbNodeUtilities {
   // find a robot ancestor above the node in the scene tree, return NULL if no robot found
   WbRobot *findRobotAncestor(const WbNode *node);
 
-  // is this node directly attached to the root node
-  bool isTopNode(const WbNode *node);
-
-  // find the ancestor node directly attached to the root node
-  const WbNode *findTopNode(const WbNode *node);
-
   // return direct Solid descendant nodes
   // in case of PROTO nodes only internal nodes are checked
   QList<WbSolid *> findSolidDescendants(WbNode *node);
 
-  // is this node located directly or indirectly in the given field
-  bool isFieldDescendant(const WbNode *node, const QString &fieldName);
-
   // is this node located directly or indirectly under a Billboard
   bool isDescendantOfBillboard(const WbNode *node);
+
+  // is this node located directly or indirectly under a Propeller
+  bool isDescendantOfPropeller(const WbNode *node);
 
   // is this node located in the boundingObject field of a Solid
   // use checkNodeUse() to inspect USE nodes and PROTO parameter instances
@@ -120,45 +109,15 @@ namespace WbNodeUtilities {
   // is this node a valid USEable node
   bool isAValidUseableNode(const WbNode *node, QString *warning = NULL);
 
-  // find (innermost) enclosing PROTO if any
-  WbProtoModel *findContainingProto(const WbNode *node);
-
-  // find root PROTO node if any
-  WbNode *findRootProtoNode(WbNode *const node);
-
-  // find the field parent of the target field, i.e. the closest upper field in the tree hierarchy
-  WbField *findFieldParent(const WbField *target, bool internal = false);
-
-  // is the target field or node visible in the Scene Tree (possibly as a nested proto parameter)
-  bool isVisible(const WbNode *node);
-  bool isVisible(const WbField *target);
-
   // return closest WbMatter ancestor that is visible in the scene tree (given node included)
   WbMatter *findUpperVisibleMatter(WbNode *node);
 
   // is the target field or the target parameter field a template regenerator field
   bool isTemplateRegeneratorField(const WbField *field);
 
-  // checks whether a node of specific model name exists in the node tree and returns true if it is visible
-  // default fields that won't be written to the WBT file are skipped
-  bool existsVisibleProtoNodeNamed(const QString &modelName);
-  // return the list of PROTO nodes "visible" in the world (skipping default PROTO parameters)
-  QList<const WbNode *> protoNodesInWorldFile(const WbNode *root);
-
-  WbAbstractTransform *abstractTransformCast(WbBaseNode *node);
-
   //////////////////////////////
   // Non-permanent properties //
   //////////////////////////////
-
-  // has this node a DEF node ancestor
-  bool hasADefNodeAncestor(const WbNode *node);
-
-  // has this node a USE node ancestor
-  bool hasAUseNodeAncestor(const WbNode *node);
-
-  // find all ancestor USE nodes
-  QList<WbNode *> findUseNodeAncestors(WbNode *node);
 
   // has this node a robot ancestor
   bool hasARobotAncestor(const WbNode *node);
@@ -176,10 +135,6 @@ namespace WbNodeUtilities {
   // has this node a Joint node descendant
   bool hasAJointDescendant(const WbNode *node);
 
-  // has this DEF node a subsequent USE or DEF node using its new definition
-  bool hasASubsequentUseOrDefNode(const WbNode *defNode, const QString &defName, const QString &previousDefName,
-                                  bool &useOverlap, bool &defOverlap);
-
   // is this node selected
   bool isSelected(const WbNode *node);
 
@@ -193,11 +148,12 @@ namespace WbNodeUtilities {
   bool isDeviceTypeName(const QString &modelName);
   bool isSolidDeviceTypeName(const QString &modelName);
   bool isSolidTypeName(const QString &modelName);
-  bool isSolidButRobotTypeName(const QString &modelName);
   bool isMatterTypeName(const QString &modelName);
   QString slotType(const WbNode *node);
 
   bool isTrackAnimatedGeometry(const WbNode *node);
+
+  dBodyID findBodyMerger(const WbNode *node);
 
   ///////////
   // Other //
@@ -226,13 +182,14 @@ namespace WbNodeUtilities {
   // can srcNode be transformed
   // hasDeviceDescendant expected values: {-1: not computed, 0: doesn't have device descendants, 1: has device descendants)
   enum Answer { SUITABLE, UNSUITABLE, LOOSING_INFO };
-  Answer isSuitableForTransform(const WbNode *srcNode, const QString &destModelName, int *hasDeviceDescendant);
+  Answer isSuitableForTransform(const WbNode *srcNode, const QString &destModelName, int *hasDeviceDescendantFlag);
 
   // check if type of two Slot nodes is compatible
   bool isSlotTypeMatch(const QString &firstType, const QString &secondType, QString &errorMessage);
 
   // return a node's bounding sphere ancestor if it exists (can be the node's own)
   WbBoundingSphere *boundingSphereAncestor(const WbNode *node);
+
 };  // namespace WbNodeUtilities
 
 #endif

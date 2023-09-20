@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,16 +15,20 @@
 #include "WbMesh.hpp"
 
 #include "WbApplication.hpp"
+#include "WbBoundingSphere.hpp"
+#include "WbDownloadManager.hpp"
 #include "WbDownloader.hpp"
 #include "WbField.hpp"
 #include "WbGroup.hpp"
 #include "WbMFString.hpp"
+#include "WbMatter.hpp"
 #include "WbNetwork.hpp"
 #include "WbNodeUtilities.hpp"
 #include "WbResizeManipulator.hpp"
 #include "WbTriangleMesh.hpp"
 #include "WbUrl.hpp"
 #include "WbViewpoint.hpp"
+#include "WbVrmlNodeUtilities.hpp"
 #include "WbWorld.hpp"
 
 #include <assimp/postprocess.h>
@@ -43,6 +47,7 @@ void WbMesh::init() {
   mIsCollada = false;
   mResizeConstraint = WbWrenAbstractResizeManipulator::UNIFORM;
   mDownloader = NULL;
+  mBoundingObjectNeedUpdate = false;
   setCcw(mCcw->value());
 }
 
@@ -69,23 +74,17 @@ void WbMesh::downloadAssets() {
   if (!WbUrl::isWeb(completeUrl) || WbNetwork::instance()->isCachedWithMapUpdate(completeUrl))
     return;
 
-  if (mDownloader != NULL && mDownloader->hasFinished())
-    delete mDownloader;
-
-  mDownloader = new WbDownloader(this);
+  delete mDownloader;
+  mDownloader = WbDownloadManager::instance()->createDownloader(QUrl(completeUrl), this);
   if (!WbWorld::instance()->isLoading())  // URL changed from the scene tree or supervisor
     connect(mDownloader, &WbDownloader::complete, this, &WbMesh::downloadUpdate);
-
-  mDownloader->download(QUrl(completeUrl));
+  mDownloader->download();
 }
 
 void WbMesh::downloadUpdate() {
+  mBoundingObjectNeedUpdate = true;
   updateUrl();
   WbWorld::instance()->viewpoint()->emit refreshRequired();
-  const WbNode *ancestor = WbNodeUtilities::findTopNode(this);
-  WbGroup *group = dynamic_cast<WbGroup *>(const_cast<WbNode *>(ancestor));
-  if (group)
-    group->recomputeBoundingSphere();
 }
 
 void WbMesh::preFinalize() {
@@ -125,11 +124,9 @@ bool WbMesh::checkIfNameExists(const aiScene *scene, const QString &name) const 
 }
 
 void WbMesh::updateTriangleMesh(bool issueWarnings) {
-  const QString &filePath = WbUrl::computePath(this, "url", mUrl, 0);
-  if (filePath.isEmpty()) {
+  const QString &filePath = WbUrl::computePath(this, "url", mUrl, 0, true);
+  if (filePath.isEmpty() || filePath == WbUrl::missingTexture()) {
     mTriangleMesh->init(NULL, NULL, NULL, NULL, 0, 0);
-    if (mUrl->size() > 0 && mUrl->item(0) != filePath)
-      warn(tr("File '%1' could not be found.").arg(mUrl->item(0)));
     return;
   }
 
@@ -137,9 +134,9 @@ void WbMesh::updateTriangleMesh(bool issueWarnings) {
   importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_CAMERAS | aiComponent_LIGHTS | aiComponent_BONEWEIGHTS |
                                                         aiComponent_ANIMATIONS | aiComponent_TEXTURES | aiComponent_COLORS);
   const aiScene *scene;
-  unsigned int flags = aiProcess_ValidateDataStructure | aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                       aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_RemoveComponent |
-                       aiProcess_FlipUVs;
+  const unsigned int flags = aiProcess_ValidateDataStructure | aiProcess_Triangulate | aiProcess_GenSmoothNormals |
+                             aiProcess_JoinIdenticalVertices | aiProcess_OptimizeGraph | aiProcess_RemoveComponent |
+                             aiProcess_FlipUVs;
 
   if (WbUrl::isWeb(filePath)) {
     if (!WbNetwork::instance()->isCachedWithMapUpdate(filePath)) {
@@ -154,8 +151,8 @@ void WbMesh::updateTriangleMesh(bool issueWarnings) {
       return;
     }
     const QByteArray data = file.readAll();
-    const char *hint = filePath.mid(filePath.lastIndexOf('.') + 1).toUtf8().constData();
-    scene = importer.ReadFileFromMemory(data.constData(), data.size(), flags, hint);
+    const QByteArray hint = filePath.mid(filePath.lastIndexOf('.') + 1).toUtf8();
+    scene = importer.ReadFileFromMemory(data.constData(), data.size(), flags, hint.constData());
   } else
     scene = importer.ReadFile(filePath.toUtf8().constData(), flags);
 
@@ -192,6 +189,10 @@ void WbMesh::updateTriangleMesh(bool issueWarnings) {
 
     if (mIsCollada && mMaterialIndex->value() >= 0 && mMaterialIndex->value() != (int)mesh->mMaterialIndex)
       continue;
+
+    if (mesh->mNumVertices > 100000)
+      warn(tr("Mesh '%1' has more than 100'000 vertices, it is recommended to reduce the number of vertices.")
+             .arg(mesh->mName.C_Str()));
 
     totalVertices += mesh->mNumVertices;
     totalFaces += mesh->mNumFaces;
@@ -336,7 +337,9 @@ void WbMesh::updateUrl() {
           mDownloader = NULL;
         }
 
-        downloadAssets();  // URL was changed from the scene tree or supervisor
+        if (!mDownloader || mDownloader->url().toString() != mUrl->item(0))
+          downloadAssets();  // URL was changed from the scene tree or supervisor
+
         return;
       }
     }
@@ -348,8 +351,18 @@ void WbMesh::updateUrl() {
       emit wrenObjectsCreated();  // throw signal to update pickable state
   }
 
-  if (isAValidBoundingObject())
+  if (isAValidBoundingObject()) {
+    if (mBoundingObjectNeedUpdate) {
+      WbMatter *boundingObjectAncestor = WbNodeUtilities::findBoundingObjectAncestor(this);
+      if (boundingObjectAncestor && boundingObjectAncestor->odeGeom() == NULL)
+        boundingObjectAncestor->updateBoundingObject();
+      mBoundingObjectNeedUpdate = false;
+    }
     applyToOdeData();
+  }
+
+  if (mBoundingSphere && !isInBoundingObject())
+    mBoundingSphere->setOwnerSizeChanged();
 
   if (isPostFinalizedCalled())
     emit changed();
@@ -422,4 +435,13 @@ void WbMesh::exportNodeFields(WbWriter &writer) const {
     dirtyName.replace("<", "&lt;", Qt::CaseInsensitive);
     writer << " name='" << dirtyName.replace("&", "&amp;", Qt::CaseInsensitive) << "'";
   }
+}
+
+QStringList WbMesh::fieldsToSynchronizeWithX3D() const {
+  QStringList fields;
+  fields << "url"
+         << "ccw"
+         << "name"
+         << "materialIndex";
+  return fields;
 }

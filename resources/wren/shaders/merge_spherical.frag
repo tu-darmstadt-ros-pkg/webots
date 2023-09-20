@@ -21,7 +21,8 @@ in vec2 texUv;
 
 out vec4 fragColor;
 
-uniform int rangeCamera;
+uniform bool rangeCamera;
+uniform bool cylindrical;
 uniform int subCamerasResolutionX;
 uniform int subCamerasResolutionY;
 
@@ -35,11 +36,14 @@ uniform sampler2D inputTextures[6];
 
 
 void main() {
-  //https://www.shadertoy.com/view/lssGD4
-  vec3 coord3d;
 
   //workaround for lidars, as this breaks them due to the lack of equirectangular images
-  if (rangeCamera > 0) {
+  // check if still a problem
+  //if (rangeCamera > 0) {
+
+  vec3 coord3d;
+
+  if (cylindrical) {
     // update the z 3D-coordinate
     float yCurrentAngle = (texUv.y - 0.5) * fovY / fovYCorrectionCoefficient + pi_2;
     coord3d = vec3(0.0, 0.0, cos(yCurrentAngle));
@@ -52,10 +56,10 @@ void main() {
     coord3d.x = sinY * cos(xCurrentAngle);
     coord3d.y = sinY * sin(xCurrentAngle);
 
-  }
-  else {
-    vec2 d = texUv-0.5;//vec2(x, y);
-    float yaw = sqrt(d.x*d.x +d.y*d.y) * fovX;
+  } else {
+    // Fisheye effect https://www.shadertoy.com/view/lssGD4
+    vec2 d = texUv - 0.5;
+    float yaw = sqrt(d.x * d.x + d.y * d.y) * fovX;
 
     float roll = -atan(d.y, d.x);
     float sy = -sin(yaw) * cos(roll);
@@ -148,7 +152,7 @@ void main() {
     fragColor = texelFetch(inputTextures[5], imageIndex, 0);
 
   // rectify the spherical transform
-  if (rangeCamera > 0) {
+  if (rangeCamera) {
     float depth = fragColor.x;
     if (depth < maxRange) {
       float cosine = 0.0f;

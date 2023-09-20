@@ -1,4 +1,4 @@
-import {arrayXPointer} from './../nodes/utils/utils.js';
+import {arrayXPointer} from '../nodes/utils/utils.js';
 
 export default class WbWrenShaders {
   static buildShader(shader, vertexShaderPath, fragmentShaderpath) {
@@ -152,7 +152,7 @@ export default class WbWrenShaders {
       _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_GTAO],
         Enum.WR_GLSL_LAYOUT_UNIFORM_TEXTURE1);
       _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_GTAO],
-        Enum.WR_GLSL_LAYOUT_UNIFORM_TEXTURE2);
+        Enum.WR_GLSL_LAYOUT_UNIFORM_GTAO);
       _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_GTAO],
         Enum.WR_GLSL_LAYOUT_UNIFORM_VIEWPORT_SIZE);
 
@@ -757,6 +757,31 @@ export default class WbWrenShaders {
 
     return WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SMAA_FINAL_BLEND_PASS];
   }
+
+  static simpleShader() {
+    if (!WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE]) {
+      WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE] = _wr_shader_program_new();
+
+      _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_TEXTURE0);
+      _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_MODEL_TRANSFORM);
+      _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_TEXTURE_TRANSFORM);
+      _wr_shader_program_use_uniform(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_CHANNEL_COUNT);
+
+      _wr_shader_program_use_uniform_buffer(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_BUFFER_MATERIAL_PHONG);
+      _wr_shader_program_use_uniform_buffer(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        Enum.WR_GLSL_LAYOUT_UNIFORM_BUFFER_CAMERA_TRANSFORMS);
+
+      WbWrenShaders.buildShader(WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE],
+        '../../../resources/wren/shaders/simple.vert', '../../../resources/wren/shaders/simple.frag');
+    }
+
+    return WbWrenShaders.gShaders[WbWrenShaders.SHADER.SHADER_SIMPLE];
+  }
 }
 
 // gShaders static variable
@@ -791,5 +816,6 @@ WbWrenShaders.SHADER = {
   SHADER_SKYBOX: 26,
   SHADER_SMAA_EDGE_DETECT_PASS: 27,
   SHADER_SMAA_BLENDING_WEIGHT_CALCULATION_PASS: 28,
-  SHADER_SMAA_FINAL_BLEND_PASS: 29
+  SHADER_SMAA_FINAL_BLEND_PASS: 29,
+  SHADER_SIMPLE: 30
 };

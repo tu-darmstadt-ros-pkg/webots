@@ -1,44 +1,54 @@
 import {exitFullscreen} from './fullscreen_handler.js';
 import Toolbar from './Toolbar.js';
+import ProtoManager from './ProtoManager.js';
 import {webots} from './webots.js';
 import {changeGtaoLevel} from './nodes/wb_preferences.js';
 import WbWorld from './nodes/WbWorld.js';
+import WbDevice from './nodes/WbDevice.js';
+import WbVector3 from './nodes/utils/WbVector3.js';
+import {WbNodeType} from './nodes/wb_node_type.js';
 
 /* The following member variables can be set by the application:
 
-webotsView.showIde             // defines whether the IDE button should be displayed.
-webotsView.showInfo            // defines whether the info button should be displayed.
-webotsView.showPlay            // defines whether the play button should be displayed.
-webotsView.showQuit            // defines whether the quit button should be displayed.
-webotsView.showReload          // defines whether the reload button should be displayed.
-webotsView.showReset           // defines whether the reset button should be displayed.
-webotsView.showRobotWindow     // defines whether the robot window button should be displayed.
-webotsView.showRun             // defines whether the run button should be displayed.
-webotsView.showStep            // defines whether the step button should be displayed.
-webotsView.showWorldSelection  // defines whether the world selection button should be displayed.
+webotsView.showIde               // defines whether the IDE button should be displayed.
+webotsView.showInfo              // defines whether the info button should be displayed.
+webotsView.showPlay              // defines whether the play button should be displayed.
+webotsView.showQuit              // defines whether the quit button should be displayed.
+webotsView.showReload            // defines whether the reload button should be displayed.
+webotsView.showReset             // defines whether the reset button should be displayed.
+webotsView.showRobotWindow       // defines whether the robot window button should be displayed.
+webotsView.showRun               // defines whether the run button should be displayed.
+webotsView.showStep              // defines whether the step button should be displayed.
+webotsView.showTerminal          // defines whether the terminal button should be displayed.
+webotsView.showCustomWindow      // defines whether the custom window button should be displayed.
+webotsView.showWorldSelection    // defines whether the world selection button should be displayed.
 */
 
 export default class WebotsView extends HTMLElement {
+  #hasAnimation;
+  #hasProto;
+  #hasScene;
+  #initialCallbackDone;
   constructor() {
     super();
-    this._hasAnimation = false;
-    this._initialCallbackDone = false;
+    this.#hasAnimation = false;
+    this.#initialCallbackDone = false;
   }
 
   connectedCallback() {
-    if (this._initialCallbackDone)
+    if (this.#initialCallbackDone)
       return;
 
-    this._initialCallbackDone = true;
+    this.#initialCallbackDone = true;
 
     this.toolbarCss = document.createElement('link');
-    this.toolbarCss.href = 'https://cyberbotics.com/wwi/R2022b/css/toolbar.css';
+    this.toolbarCss.href = 'https://cyberbotics.com/wwi/R2023b/css/toolbar.css';
     this.toolbarCss.type = 'text/css';
     this.toolbarCss.rel = 'stylesheet';
     document.head.appendChild(this.toolbarCss);
 
     this.progressCss = document.createElement('link');
-    this.progressCss.href = 'https://cyberbotics.com/wwi/R2022b/css/progress.css';
+    this.progressCss.href = 'https://cyberbotics.com/wwi/R2023b/css/progress.css';
     this.progressCss.type = 'text/css';
     this.progressCss.rel = 'stylesheet';
     document.head.appendChild(this.progressCss);
@@ -49,16 +59,16 @@ export default class WebotsView extends HTMLElement {
 
         // if it's a data file, use a custom dir
         if (path.endsWith('.data'))
-          return 'https://cyberbotics.com/wwi/R2022b/' + path;
+          return 'https://cyberbotics.com/wwi/R2023b/' + path;
 
         // otherwise, use the default, the prefix (JS file's dir) + the path
         return prefix + path;
       }`;
     document.head.appendChild(script);
-    this._init();
+    this.#init();
   }
 
-  _loadScript(scriptUrl) {
+  #loadScript(scriptUrl) {
     return new Promise(function(resolve, reject) {
       const script = document.createElement('script');
       script.onload = resolve;
@@ -67,13 +77,14 @@ export default class WebotsView extends HTMLElement {
     });
   }
 
-  _init() {
+  #init() {
     const promises = [];
     Module.onRuntimeInitialized = () => {
       Promise.all(promises).then(() => {
         this.initializationComplete = true;
         let scene = this.dataset.scene;
         let animation = this.dataset.animation;
+        let proto = this.dataset.proto;
         let thumbnail = this.dataset.thumbnail;
         let isMobileDevice = this.dataset.isMobileDevice;
         let server = this.dataset.server;
@@ -84,16 +95,21 @@ export default class WebotsView extends HTMLElement {
           this.loadScene(scene, isMobileDevice, thumbnail);
         else if (typeof server !== 'undefined' && server !== '')
           this.connect(server, this.dataset.mode, this.dataset.isBroadcast, isMobileDevice, this.dataset.timeout, thumbnail);
+        else if (typeof proto !== 'undefined' && proto !== '')
+          this.loadProto(proto, isMobileDevice, thumbnail);
       });
     };
-    promises.push(this._loadScript('https://cyberbotics.com/wwi/R2022b/dependencies/assimpjs.js'));
-    promises.push(this._loadScript('https://cyberbotics.com/wwi/R2022b/dependencies/glm-js.min.js'));
-    promises.push(this._loadScript('https://cyberbotics.com/wwi/R2022b/dependencies/quaternion.min.js'));
-    promises.push(this._loadScript('https://cyberbotics.com/wwi/R2022b/enum.js'));
-    promises.push(this._loadScript('https://cyberbotics.com/wwi/R2022b/wrenjs.js'));
+
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/dependencies/ansi_up.js'));
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/dependencies/assimpjs.js'));
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/dependencies/glm-js.min.js'));
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/dependencies/quaternion.min.js'));
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/dependencies/libtess.min.js'));
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/enum.js'));
+    promises.push(this.#loadScript('https://cyberbotics.com/wwi/R2023b/wrenjs.js'));
   }
 
-  _closeWhenDOMElementRemoved() {
+  #closeWhenDOMElementRemoved() {
     // https://stackoverflow.com/questions/52834774/dom-event-when-element-is-removed
     let observer = new MutationObserver(() => {
       if (!document.body.contains(this)) {
@@ -105,18 +121,17 @@ export default class WebotsView extends HTMLElement {
   }
 
   close() {
-    if (this._hasAnimation)
-      this._closeAnimation();
-    else if (this._hasScene)
-      this._closeScene();
+    if (this.#hasAnimation)
+      this.#closeAnimation();
+    else if (this.#hasScene || this.#hasProto)
+      this.#closeScene();
     else if (typeof this._view !== 'undefined' && typeof this._view.stream !== 'undefined' &&
       typeof this._view.stream.socket !== 'undefined')
-      this._disconnect();
+      this.#disconnect();
   }
 
   resize() {
-    if (typeof this._view !== 'undefined')
-      this._view.onresize();
+    this._view?.onresize();
   }
 
   setWebotsMessageCallback(callback) {
@@ -146,11 +161,11 @@ export default class WebotsView extends HTMLElement {
       typeof this._view === 'undefined')
       return;
 
-    let pose = {
+    let update = {
       'id': nodeId,
       [field]: value
     };
-    this._view.x3dScene.applyPose(pose);
+    this._view.x3dScene.applyUpdate(update);
     if (render)
       this._view.x3dScene.render();
   }
@@ -175,14 +190,14 @@ export default class WebotsView extends HTMLElement {
   }
 
   // Animation's functions
-  loadAnimation(scene, animation, play, isMobileDevice, thumbnail) {
+  loadAnimation(scene, animation, play, isMobileDevice, thumbnail, raw) {
     if (typeof scene === 'undefined') {
       console.error('No x3d file defined');
       return;
     }
 
     if (!this.initializationComplete)
-      setTimeout(() => this.loadAnimation(scene, animation, play, isMobileDevice, thumbnail), 500);
+      setTimeout(() => this.loadAnimation(scene, animation, play, isMobileDevice, thumbnail, raw), 500);
     else {
       // terminate the previous activity if any
       this.close();
@@ -196,17 +211,29 @@ export default class WebotsView extends HTMLElement {
         if (typeof this.onready === 'function')
           this.onready();
       };
-      this._view.open(scene, 'undefined', thumbnail);
+      this._view.open(scene, 'undefined', thumbnail, raw);
       if (play !== 'undefined' && play === false)
-        this._view.setAnimation(animation, 'pause', true);
+        this._view.setAnimation(animation, 'pause', true, raw);
       else
-        this._view.setAnimation(animation, 'play', true);
-      this._hasAnimation = true;
-      this._closeWhenDOMElementRemoved();
+        this._view.setAnimation(animation, 'play', true, raw);
+      this.#hasAnimation = true;
+      this.#closeWhenDOMElementRemoved();
     }
   }
 
-  _closeAnimation() {
+  setCustomWindowTitle(title) {
+    this.toolbar?.customWindow?.setTitle(title);
+  }
+
+  setCustomWindowTooltip(tooltip) {
+    this.toolbar?.customWindow?.setTooltip(tooltip);
+  }
+
+  setCustomWindowContent(content) {
+    this.toolbar?.customWindow?.setContent(content);
+  }
+
+  #closeAnimation() {
     this._view.animation.pause();
     if (typeof this.toolbar !== 'undefined') {
       this.toolbar.removeAnimationToolbar();
@@ -215,12 +242,19 @@ export default class WebotsView extends HTMLElement {
     this._view.removeLabels();
     this._view.destroyWorld();
     this._view.animation = undefined;
-    this._hasAnimation = false;
+    this.#hasAnimation = false;
     this.innerHTML = null;
   }
 
   hasAnimation() {
-    return this._hasAnimation;
+    return this.#hasAnimation;
+  }
+
+  setAnimationStepCallback(callbackFunction) {
+    if (typeof this._view !== 'undefined' && typeof this._view.animation !== 'undefined') {
+      this._view.animation.stepCallback = callbackFunction;
+      return true;
+    }
   }
 
   // Streaming viewer's functions
@@ -253,6 +287,8 @@ export default class WebotsView extends HTMLElement {
       this._view.onready = () => {
         if (typeof this.toolbar === 'undefined')
           this.toolbar = new Toolbar(this._view, 'streaming', this);
+        if (document.getElementById('robot-window-button') !== null)
+          document.getElementsByTagName('webots-view')[0].toolbar.loadRobotWindows();
         if (typeof this.onready === 'function')
           this.onready();
       };
@@ -261,11 +297,11 @@ export default class WebotsView extends HTMLElement {
         if (typeof this.ondisconnect === 'function')
           this.ondisconnect();
       };
-      this._closeWhenDOMElementRemoved();
+      this.#closeWhenDOMElementRemoved();
     }
   }
 
-  _disconnect() {
+  #disconnect() {
     let exitFullscreenButton = document.getElementById('exit_fullscreenButton');
     if (exitFullscreenButton && exitFullscreenButton.style.display !== 'none')
       exitFullscreen();
@@ -284,13 +320,11 @@ export default class WebotsView extends HTMLElement {
   }
 
   hideToolbar() {
-    if (typeof this.toolbar !== 'undefined')
-      this.toolbar.hideToolbar(true);
+    this.toolbar?.hideToolbar(true);
   }
 
   showToolbar() {
-    if (typeof this.toolbar !== 'undefined')
-      this.toolbar.showToolbar(true);
+    this.toolbar?.showToolbar(true);
   }
 
   sendMessage(message) {
@@ -320,24 +354,86 @@ export default class WebotsView extends HTMLElement {
         if (typeof this.onready === 'function')
           this.onready();
       };
+
       this._view.open(scene, 'undefined', thumbnail);
-      this._hasScene = true;
-      this._closeWhenDOMElementRemoved();
+      this.#hasScene = true;
+      this.#closeWhenDOMElementRemoved();
     }
   }
 
   hasScene() {
-    return this._hasScene;
+    return this.#hasScene;
   }
 
-  _closeScene() {
+  #closeScene() {
     if (typeof this.toolbar !== 'undefined') {
       this.toolbar.removeToolbar();
       this.toolbar = undefined;
     }
     this._view.destroyWorld();
-    this._hasScene = false;
+    this.#hasScene = false;
+    this.#hasProto = false;
     this.innerHTML = null;
+  }
+
+  loadProto(proto, isMobileDevice, thumbnail, moveFloor) {
+    if (typeof proto === 'undefined') {
+      console.error('No proto file defined');
+      return;
+    }
+
+    if (!this.initializationComplete)
+      setTimeout(() => this.loadProto(proto, isMobileDevice, thumbnail, moveFloor), 500);
+    else {
+      // terminate the previous activity if any
+      this.close();
+
+      console.time('Loaded in: ');
+      if (typeof this._view === 'undefined')
+        this._view = new webots.View(this, isMobileDevice);
+      this.protoManager = new ProtoManager(this._view);
+      this.protoManager.loadProto(proto);
+      this._view.onready = async() => {
+        this.toolbar = new Toolbar(this._view, 'proto', this);
+        if (typeof this.onready === 'function')
+          this.onready();
+
+        this.resize();
+        this.toolbar.protoParameterWindowInitializeSizeAndPosition();
+        const topProtoNode = WbWorld.instance.root.children[WbWorld.instance.root.children.length - 1];
+        if (topProtoNode instanceof WbDevice || topProtoNode.nodeType === WbNodeType.WB_NODE_SLOT ||
+          topProtoNode.nodeType === WbNodeType.WB_NODE_SHAPE || moveFloor === '1')
+          this.#repositionFloor(topProtoNode, WbWorld.instance.root.children[WbWorld.instance.root.children.length - 2]);
+
+        WbWorld.instance.viewpoint.moveViewpointToObject(topProtoNode);
+        WbWorld.instance.viewpoint.defaultPosition = WbWorld.instance.viewpoint.position;
+        this._view.x3dScene.render();
+      };
+
+      this.#hasProto = true;
+      this.#closeWhenDOMElementRemoved();
+    }
+  }
+
+  #repositionFloor(proto, floor) {
+    const boundingSphere = proto.boundingSphere();
+    if (typeof boundingSphere === 'undefined')
+      return;
+
+    boundingSphere.recomputeIfNeeded(false);
+    if (boundingSphere.isEmpty())
+      return;
+
+    const results = boundingSphere.computeSphereInGlobalCoordinates();
+    const boundingSphereCenter = results[0];
+    const radius = results[1];
+
+    if (floor.translation)
+      floor.translation = new WbVector3(0, 0, boundingSphereCenter.z - radius);
+  }
+
+  hasProto() {
+    return this.#hasProto;
   }
 }
 

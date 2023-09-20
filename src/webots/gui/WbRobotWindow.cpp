@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@
 #endif
 
 #include "WbDesktopServices.hpp"
+#include "WbFileUtil.hpp"
 #include "WbLog.hpp"
 #include "WbPreferences.hpp"
 #include "WbStandardPaths.hpp"
@@ -36,7 +37,7 @@ void WbRobotWindow::setupPage(int port) {
 
   // if the file is located in Webots installation directory, the WEBOTS_HOME part is replaced by "/~/" in the absolute path
   // if the file is located at another place, only the relative path is kept
-  if (windowFileName.startsWith(WbStandardPaths::webotsHomePath()))
+  if (WbFileUtil::isLocatedInInstallationDirectory(windowFileName, true))
     windowFileName = "/~WEBOTS_HOME" + windowFileName.mid(WbStandardPaths::webotsHomePath().length() - 1);
   else
     windowFileName = windowFileName.mid(windowFileName.indexOf("/robot_windows"));
@@ -56,6 +57,7 @@ void WbRobotWindow::setClientID(const QString &clientID, const QString &robotNam
 
 bool WbRobotWindow::openOnWebBrowser(const QString &url, const QString &program, const bool newBrowserWindow) {
   QString systemProgram;
+  // cppcheck-suppress unassignedVariable
   QStringList arguments;
 
 #ifdef _WIN32

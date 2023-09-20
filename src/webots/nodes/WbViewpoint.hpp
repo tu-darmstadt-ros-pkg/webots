@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ struct WrCamera;
 struct WrTexture;
 struct WrViewport;
 
+class WbAbstractPose;
 class WbCoordinateSystem;
 class WbLensFlare;
 class WbRay;
@@ -108,12 +109,18 @@ public:
   void lookAt(const WbVector3 &target, const WbVector3 &upVector);
 
   // fixed views
-  void frontView();
-  void backView();
-  void leftView();
-  void rightView();
+  void southView();
+  void northView();
+  void westView();
+  void eastView();
   void topView();
   void bottomView();
+  void objectFrontView();
+  void objectBackView();
+  void objectLeftView();
+  void objectRightView();
+  void objectTopView();
+  void objectBottomView();
 
   // public cleanup
   void terminateFollowUp();
@@ -230,6 +237,7 @@ private:
   // viewpoint orbit animation
   WbVector3 mCenterToViewpointUnitVector;
   WbVector3 mOrbitTargetUnitVector;
+  WbVector3 *mFinalOrbitTargetPostion;
   WbQuaternion mInitialOrientationQuaternion;
   WbQuaternion mFinalOrientationQuaternion;
   WbQuaternion mInitialOrbitQuaternion;
@@ -285,8 +293,12 @@ private:
   void createCameraListenerIfNeeded();
 
   // can be used for any generic animated viewpoint movement
-  void moveTo(const WbVector3 &targetPosition, const WbRotation &targetRotation, bool movingToAxis = false);
-  void orbitTo(const WbVector3 &targetUnitVector, const WbRotation &targetRotation);
+  void moveTo(const WbVector3 &targetPosition, const WbRotation &targetRotation);
+  void orbitTo(const WbVector3 &targetUnitVector, const WbRotation &targetRotation,
+               const WbAbstractPose *selectedObject = NULL);
+
+  static WbAbstractPose *computeSelectedObjectPose();
+  static WbRotation computeObjectViewRotation(const WbRotation &rotation, const WbAbstractPose *selectedObject);
 
 private slots:
   void updateFieldOfView();

@@ -1,10 +1,10 @@
-// Copyright 1996-2022 Cyberbotics Ltd.
+// Copyright 1996-2023 Cyberbotics Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -135,7 +135,11 @@ private slots:
   void showStatusBarMessage(WbLog::Level level, const QString &message);
   void editRobotController();
   void showRobotWindow();
+  void clearOverlaysMenu();
   void updateOverlayMenu();
+  void updateRobotNameInOverlaysMenu();
+  void addRobotInOverlaysMenu(WbRobot *robot);
+  void removeRobotInOverlaysMenu(const WbRobot *robot);
   void createWorldLoadingProgressDialog();
   void deleteWorldLoadingProgressDialog();
   void setWorldLoadingProgress(const int progress);
@@ -198,7 +202,6 @@ private:
   QString findHtmlFileName(const char *title);
   void enableToolsWidgetItems(bool enabled);
   void updateWindowTitle();
-  void updateGui();
   void updateSimulationMenu();
   void writePreferences() const;
   void showDocument(const QString &url);
@@ -220,14 +223,14 @@ private:
   WbTcpServer *mTcpServer;
   bool mSaveLocally;
 
-  bool uploadFileExists(QString fileName);
+  bool uploadFileExists(const QString &fileName);
   char mUploadType;
 
 private slots:
   void showOnlineDocumentation(const QString &book, const QString &page = "index");
   void updateProjectPath(const QString &oldPath, const QString &newPath);
   void simulationQuit(int exitStatus);
-  void openFileInTextEditor(const QString &filePath, bool modify = true, bool isRobot = false);
+  void openFileInTextEditor(const QString &fileName, bool modify = true, bool isRobot = false);
 
   void maximizeDock();
   void minimizeDock();
