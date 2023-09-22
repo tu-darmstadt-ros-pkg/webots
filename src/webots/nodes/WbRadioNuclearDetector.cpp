@@ -16,6 +16,8 @@
 #include <QtCore/QDataStream>
 #include <cassert>
 
+#include <iostream>
+
 static QList<WbRadioNuclearDetector *> gDetectorList;
 static QList<WbRadioNuclearSource *> gSourceList;
 
@@ -66,9 +68,11 @@ private:
 
 class RadioNuclearMeasurement {
 public:
-  RadioNuclearMeasurement(WbRadioNuclearInfo *measurement, WbRadioNuclearDetector *d, dSpaceID spaceId) : mMeasurement(measurement), mCollided(false) {
+
+  RadioNuclearMeasurement(WbRadioNuclearSource *source, WbRadioNuclearDetector *d, dSpaceID spaceId) :
+    mCollided(false) {
+    mMeasurement = new WbRadioNuclearInfo(source, source->dosage(), source->radiationType());
     assert(spaceId && d);
-    WbRadioNuclearSource *source = measurement->source();
     assert(source);
     mSource = source;
 
@@ -92,6 +96,7 @@ public:
       delete odeGeomData;
       dGeomDestroy(mGeom);
     }*/
+    delete mMeasurement;
   };
 
   WbRadioNuclearInfo *info() { return mMeasurement; }
@@ -141,13 +146,13 @@ WbRadioNuclearDetector::WbRadioNuclearDetector(const WbNode &other) : WbSolidDev
 }
 
 WbRadioNuclearDetector::~WbRadioNuclearDetector() {
-  delete mSensor;
-
   qDeleteAll(mMeasurementList);
-  qDeleteAll(mSourceList);
-
-  // remove myself
+  // Not deleting all sources as this is wrong, only list should be deleted
+  //qDeleteAll(mSourceList);
+  mSourceList.clear();
+  // remove myself from list
   gDetectorList.removeAll(this);
+  delete mSensor;
 }
 
 void WbRadioNuclearDetector::preFinalize() {
@@ -243,8 +248,7 @@ void WbRadioNuclearDetector::prePhysicsStep(double ms) {
     // receiver or emitter could move during physics step
     //mMeasurementList.clear();
     foreach (WbRadioNuclearSource *source, mSourceList) {
-      WbRadioNuclearInfo *info = new WbRadioNuclearInfo(source, source->dosage(), source->radiationType());
-      RadioNuclearMeasurement *m = new RadioNuclearMeasurement(info, this, WbOdeContext::instance()->space());
+      RadioNuclearMeasurement *m = new RadioNuclearMeasurement(source, this, WbOdeContext::instance()->space());
       mMeasurementList.append(m);
     }
 
@@ -284,8 +288,7 @@ void WbRadioNuclearDetector::postPhysicsStep() {
 
     // check range, no aperture for now
     if (!checkApertureAndRange(info->source(), this, true)) {
-      delete info;
-      delete m;
+      delete m;  // Measurement also deletes it's info
       continue;
     }
 
@@ -293,7 +296,6 @@ void WbRadioNuclearDetector::postPhysicsStep() {
     if (type != GAMMA) {
       // check collision
       if (m->hasCollided()) {
-        delete info;
         delete m;
         continue;
       }
@@ -329,7 +331,6 @@ void WbRadioNuclearDetector::postPhysicsStep() {
     // add dosage with simulated decay + noise
     mResultingDosage += info->dosage() * signalStrength;
 
-    delete info;
     delete m;
   }
   mMeasurementList.clear();

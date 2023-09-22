@@ -12,6 +12,7 @@
 
 #include <cassert>
 
+#include<iostream>
 void WbRadioNuclearSource::init() {
   mType = findSFString("type");
   mRange = findSFDouble("range");
