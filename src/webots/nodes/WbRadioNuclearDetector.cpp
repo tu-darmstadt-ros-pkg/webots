@@ -16,8 +16,6 @@
 #include <QtCore/QDataStream>
 #include <cassert>
 
-#include <iostream>
-
 static QList<WbRadioNuclearDetector *> gDetectorList;
 static QList<WbRadioNuclearSource *> gSourceList;
 
