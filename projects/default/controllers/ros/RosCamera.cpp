@@ -92,13 +92,13 @@ RosCamera::~RosCamera() {
 ros::Publisher RosCamera::createPublisher(std::map<std::string, std::string> *topics) {
   if (topics != nullptr) {
     if (topics->find("recognition") != topics->end()) {
-      mCamera->recognitionEnable(true);
+      mCamera->recognitionEnable(mCamera->getSamplingPeriod());  // TODO allow lower sampling rate here?
       enableRecognitionPublisher(topics->at("recognition"), true);
     }
 
     if (topics->find("segmentation") != topics->end()) {
       if (!mCamera->hasRecognition()) {
-        mCamera->recognitionEnable(true);
+        mCamera->recognitionEnable(mCamera->getSamplingPeriod());  // TODO allow lower sampling rate here?
         enableRecognitionPublisher("recognition_objects");
       }
       enableRecognitionSegmentation(topics->at("segmentation"), true);
@@ -183,7 +183,7 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMessage() {
 
     double width = mCamera->getWidth();
     double height = mCamera->getHeight();
-    
+
     if (mFrameOverride != "") {
       info.header.frame_id = mFrameOverride;
     }
@@ -195,7 +195,7 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMessage() {
 
     double hfov = mCamera->getFov();
     double focal_length = width / (2.0 * tan(hfov/ 2.0));
-    
+
     //set distortion model from lens
     info.distortion_model = "plumb_bob";
     std::vector<double> D = {0.0, 0.0, 0.0, 0.0, 0.0};
@@ -224,49 +224,100 @@ sensor_msgs::CameraInfo RosCamera::createCameraInfoMessage() {
 }
 
 void RosCamera::publishAuxiliaryValue() {
-  //imageTransport
+  // check if camera should be disabled, this should be done in sensor, but is not that trivial
+  if (getNumSubscribers() == 0) {
+    if (rosSamplingPeriod() > 0) {
+      mLastSamplingStep = rosSamplingPeriod();
+      rosDisable();
+      // ROS_INFO("Disabling sensor");
+      return;
+    }
+  } else {
+    if (rosSamplingPeriod() == 0) {
+      rosEnable(mLastSamplingStep);
+      // ROS_INFO("enabling sensor");
+      return;  // wait for next cycle
+    }
+  }
+
+  // imageTransport
   if (mUseImageTransport && mItImagePub.getNumSubscribers() > 0) {
     mItImagePub.publish(createImageMsg());
   }
-  //CameraInfo
+  // CameraInfo
   if (mCameraInfoPublisher.getNumSubscribers() > 0) {
     mCameraInfoPublisher.publish(createCameraInfoMessage());
   }
 
-  if (mCamera->hasRecognition() && mCamera->getRecognitionSamplingPeriod() > 0 && (mRecognitionSegmentationPublisher.getNumSubscribers() > 0 || mItRecognitionSegmentationPublisher.getNumSubscribers() > 0)) {
-    const CameraRecognitionObject *cameraObjects = mCamera->getRecognitionObjects();
-    webots_ros::RecognitionObjects objects;
-    objects.header.stamp = ros::Time::now();
-    if (mFrameOverride != "") {
-      objects.header.frame_id = mFrameOverride;
-    }
-    else {
-      objects.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName() + "/recognition_objects";
-    }
-    for (int i = 0; i < mCamera->getRecognitionNumberOfObjects(); ++i) {
-      webots_ros::RecognitionObject object;
-      object.position.x = cameraObjects[i].position[0];
-      object.position.y = cameraObjects[i].position[1];
-      object.position.z = cameraObjects[i].position[2];
-      RosMathUtils::axisAngleToQuaternion(cameraObjects[i].orientation, object.orientation);
-      object.position_on_image.x = cameraObjects[i].position_on_image[0];
-      object.position_on_image.y = cameraObjects[i].position_on_image[1];
-      object.size_on_image.x = cameraObjects[i].size_on_image[0];
-      object.size_on_image.y = cameraObjects[i].size_on_image[1];
-      object.number_of_colors = cameraObjects[i].number_of_colors;
-      object.model = std::string(cameraObjects[i].model);
-      for (int j = 0; j < object.number_of_colors; j++) {
-        geometry_msgs::Vector3 color;
-        color.x = cameraObjects[i].colors[3 * j];
-        color.y = cameraObjects[i].colors[3 * j + 1];
-        color.z = cameraObjects[i].colors[3 * j + 2];
-        object.colors.push_back(color);
-      }
-      objects.objects.push_back(object);
-    }
-    mRecognitionObjectsPublisher.publish(objects);
+  // Recognition only stuff
+  if (!mCamera->hasRecognition()) {
+    return;
+  }
 
-    if (mIsRecognitionSegmentationEnabled) {
+  // Disable segmentation if unused
+  if (mRecognitionSegmentationPublisher.getNumSubscribers() <= 0 &&
+    mItRecognitionSegmentationPublisher.getNumSubscribers() <= 0 &&
+    mCamera->isRecognitionSegmentationEnabled()) {
+      std::cout << "no segmentation subscribers, disabling" << std::endl;
+    mCamera->disableRecognitionSegmentation();
+    if (mRecognitionObjectsPublisher.getNumSubscribers() <= 0 && mCamera->getRecognitionSamplingPeriod() > 0) {
+      // Disable recognition as well if unused
+      mCamera->recognitionDisable();
+    }
+    return;
+  }
+
+  
+  // Active recognition subscribers
+  if (mRecognitionObjectsPublisher.getNumSubscribers() > 0) {
+    // If recognition is disabled enable it
+    if (mCamera->getRecognitionSamplingPeriod() <= 0) {
+      mCamera->recognitionEnable(mCamera->getSamplingPeriod());  // TODO allow lower sampling rate here?
+    } else {  // else publish recognition
+      const CameraRecognitionObject *cameraObjects = mCamera->getRecognitionObjects();
+      webots_ros::RecognitionObjects objects;
+      objects.header.stamp = ros::Time::now();
+      if (mFrameOverride != "") {
+        objects.header.frame_id = mFrameOverride;
+      } else {
+        objects.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName() + "/recognition_objects";
+      }
+      for (int i = 0; i < mCamera->getRecognitionNumberOfObjects(); ++i) {
+        webots_ros::RecognitionObject object;
+        object.position.x = cameraObjects[i].position[0];
+        object.position.y = cameraObjects[i].position[1];
+        object.position.z = cameraObjects[i].position[2];
+        RosMathUtils::axisAngleToQuaternion(cameraObjects[i].orientation, object.orientation);
+        object.position_on_image.x = cameraObjects[i].position_on_image[0];
+        object.position_on_image.y = cameraObjects[i].position_on_image[1];
+        object.size_on_image.x = cameraObjects[i].size_on_image[0];
+        object.size_on_image.y = cameraObjects[i].size_on_image[1];
+        object.number_of_colors = cameraObjects[i].number_of_colors;
+        object.model = std::string(cameraObjects[i].model);
+        for (int j = 0; j < object.number_of_colors; j++) {
+          geometry_msgs::Vector3 color;
+          color.x = cameraObjects[i].colors[3 * j];
+          color.y = cameraObjects[i].colors[3 * j + 1];
+          color.z = cameraObjects[i].colors[3 * j + 2];
+          object.colors.push_back(color);
+        }
+        objects.objects.push_back(object);
+      }
+      mRecognitionObjectsPublisher.publish(objects);
+    }
+  }
+
+  // if subscriber exist
+  if (mRecognitionSegmentationPublisher.getNumSubscribers() > 0 ||
+    mItRecognitionSegmentationPublisher.getNumSubscribers() > 0) {
+    // enable recognition if not active
+    if (mCamera->getRecognitionSamplingPeriod() <= 0) {
+      mCamera->recognitionEnable(mCamera->getSamplingPeriod());  // TODO allow lower sampling rate here?
+    }
+    // enable segmentation if not active
+    if (!mCamera->isRecognitionSegmentationEnabled()) {
+      mCamera->enableRecognitionSegmentation();
+    } else {  // publish segmentation
       const unsigned char *colorImage = mCamera->getRecognitionSegmentationImage();
       sensor_msgs::Image image;
       image.header.stamp = ros::Time::now();
@@ -460,4 +511,15 @@ void RosCamera::enableImageTransport() {
     mRecognitionSegmentationPublisher.shutdown();
     mItRecognitionSegmentationPublisher = it.advertise(mRecognitionSegmentationTopic, 1);
   }
+}
+
+int RosCamera::getNumSubscribers() {
+  int numSubscribers = RosSensor::getNumSubscribers();
+  numSubscribers += mRecognitionObjectsPublisher.getNumSubscribers();
+  numSubscribers += mRecognitionSegmentationPublisher.getNumSubscribers();
+  numSubscribers += mCameraInfoPublisher.getNumSubscribers();
+  numSubscribers += mItImagePub.getNumSubscribers();
+  numSubscribers += mItRecognitionSegmentationPublisher.getNumSubscribers();
+
+  return numSubscribers;
 }

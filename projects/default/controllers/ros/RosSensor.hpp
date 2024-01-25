@@ -36,6 +36,8 @@ public:
   void publishValues(int step);
   bool enableSensor(int timestep, std::map<std::string, std::string> *topics = nullptr, std::string frame = "");
 
+  /*virtual*/ int getNumSubscribers();
+
 protected:
   RosSensor(std::string deviceName, Device *device, Ros *ros, bool enableDefaultServices = true);
 
@@ -51,6 +53,8 @@ protected:
     int mSamplingPeriod;
     bool mNewPublisher;
   };
+
+  int mLastSamplingStep; 
 
   std::vector<publisherDetails> mPublishList;
   std::string mFrameIdPrefix;

@@ -16,7 +16,7 @@
 
 RosSensor::RosSensor(std::string deviceName, Device *device, Ros *ros, bool enableDefaultServices) :
   RosDevice(device, ros, enableDefaultServices),
-  mFrameIdPrefix("") {
+  mFrameIdPrefix(""), mLastSamplingStep(0) {
   std::string fixedDeviceName = Ros::fixedNameString(deviceName);
   mSensorEnableServer = RosDevice::rosAdvertiseService(fixedDeviceName + "/enable", &RosSensor::sensorEnableCallback);
   mSamplingPeriodServer =
@@ -88,6 +88,20 @@ bool RosSensor::samplingPeriodCallback(webots_ros::get_int::Request &req, webots
 
 // get values from the sensors and publish it if needed for each active topic
 void RosSensor::publishValues(int step) {
+  /*if (getNumSubscribers() == 0) {
+    int samplingStep = rosSamplingPeriod();
+    if (samplingStep > 0) {
+      ROS_INFO("disabling");
+      mLastSamplingStep = samplingStep;
+      rosDisable();
+    }
+    return;
+  }
+  if (rosSamplingPeriod() == 0) {
+    ROS_INFO("enabling");
+    rosEnable(mLastSamplingStep);  // wait one timestep after enabling
+    return;
+  }*/  //this currently makes problems for sensors available in ros, but also used for control like position, TODO
   for (unsigned int i = 0; i < mPublishList.size(); ++i) {
     if (step % mPublishList[i].mSamplingPeriod == 0) {
       if (mPublishList[i].mPublisher.getNumSubscribers() > 0) {
@@ -99,4 +113,13 @@ void RosSensor::publishValues(int step) {
       publishAuxiliaryValue();
     }
   }
+}
+
+// get number of subscribers, if there's only one publisher
+int RosSensor::getNumSubscribers() {
+  int numPublisher = 0;
+  for (unsigned int i = 0; i < mPublishList.size(); ++i) {
+    numPublisher += mPublishList[i].mPublisher.getNumSubscribers();
+  }
+  return numPublisher;
 }

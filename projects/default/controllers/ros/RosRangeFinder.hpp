@@ -44,6 +44,7 @@ public:
   int rosSamplingPeriod() override { return mRangeFinder->getSamplingPeriod(); }
 
   void enableImageTransport();
+  int getNumSubscribers() /*override*/;
   
 private:
   void cleanup() { mRangeFinder->disable(); }

@@ -90,7 +90,7 @@ void RosRangeFinder::publishValue(ros::Publisher publisher) {
   if (mUseImageTransport) {
     return;
   }
-  
+
   publisher.publish(createImageMsg());
 }
 
@@ -167,6 +167,22 @@ sensor_msgs::CameraInfo RosRangeFinder::createCameraInfoMessage() {
 }
 
 void RosRangeFinder::publishAuxiliaryValue() {
+  // check if camera should be disabled, this should be done in sensor, but is not that trivial
+  if (getNumSubscribers() == 0) {
+    if (rosSamplingPeriod() > 0) {
+      mLastSamplingStep = rosSamplingPeriod();
+      rosDisable();
+      // ROS_INFO("Disabling sensor");
+      return;
+    }
+  } else {
+    if (rosSamplingPeriod() == 0) {
+      rosEnable(mLastSamplingStep);
+      // ROS_INFO("enabling sensor");
+      return;  // wait for next cycle
+    }
+  }
+
   if (mCameraInfoPublisher.getNumSubscribers() > 0) {
     mCameraInfoPublisher.publish(createCameraInfoMessage());
   }
@@ -188,4 +204,12 @@ void RosRangeFinder::enableImageTransport() {
 
   image_transport::ImageTransport it(*mRos->nodeHandle());
   mImagePub = it.advertise(mRangeTopic, 1);
+}
+
+int RosRangeFinder::getNumSubscribers() {
+  int numSubscribers = RosSensor::getNumSubscribers();
+  numSubscribers += mImagePub.getNumSubscribers();
+  numSubscribers += mCameraInfoPublisher.getNumSubscribers();
+
+  return numSubscribers;
 }

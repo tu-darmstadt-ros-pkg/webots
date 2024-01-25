@@ -62,6 +62,7 @@ public:
   void rosEnable(int samplingPeriod) override { mCamera->enable(samplingPeriod); }
   void rosDisable() override { cleanup(); }
   int rosSamplingPeriod() override { return mCamera->getSamplingPeriod(); }
+  int getNumSubscribers() /*override*/;
 
   bool enableRecognitionSegmentation(const std::string topic, const bool override = false);
   void enableRecognitionPublisher(const std::string name, const bool override = false);
