@@ -254,66 +254,66 @@ void RosCamera::publishAuxiliaryValue() {
     return;
   }
 
-  // Disable segmentation if unused
-  if (mRecognitionSegmentationPublisher.getNumSubscribers() <= 0 &&
-    mItRecognitionSegmentationPublisher.getNumSubscribers() <= 0 &&
-    mCamera->isRecognitionSegmentationEnabled()) {
-      std::cout << "no segmentation subscribers, disabling" << std::endl;
-    mCamera->disableRecognitionSegmentation();
-    if (mRecognitionObjectsPublisher.getNumSubscribers() <= 0 && mCamera->getRecognitionSamplingPeriod() > 0) {
-      // Disable recognition as well if unused
+  int num_seg_subs = mRecognitionSegmentationPublisher.getNumSubscribers() +
+    mItRecognitionSegmentationPublisher.getNumSubscribers();
+  int num_rec_subs = mRecognitionObjectsPublisher.getNumSubscribers();
+
+  bool recognition_enabled = (mCamera->getRecognitionSamplingPeriod() > 0);
+
+  // disable recognition if unused
+  if (num_seg_subs + num_rec_subs <= 0) {
+    if (recognition_enabled) {
       mCamera->recognitionDisable();
+      std::cout << "no recognition subscribers, disabling" << std::endl;
     }
-    return;
+    return;  // stopping as nothing can be published
+  } else if (!recognition_enabled) {
+    mCamera->recognitionEnable(mCamera->getSamplingPeriod());
+    std::cout << "enabling recognition" << std::endl;
+    if (num_seg_subs > 0) {
+      mCamera->recognitionEnable(mCamera->getSamplingPeriod());
+      std::cout << "enabling segmentation" << std::endl;
+      return;  // skipping current frame to allow cameras to activate, TODO test if needed
+    }
   }
 
-  
   // Active recognition subscribers
-  if (mRecognitionObjectsPublisher.getNumSubscribers() > 0) {
+  if (num_rec_subs > 0) {
     // If recognition is disabled enable it
-    if (mCamera->getRecognitionSamplingPeriod() <= 0) {
-      mCamera->recognitionEnable(mCamera->getSamplingPeriod());  // TODO allow lower sampling rate here?
-    } else {  // else publish recognition
-      const CameraRecognitionObject *cameraObjects = mCamera->getRecognitionObjects();
-      webots_ros::RecognitionObjects objects;
-      objects.header.stamp = ros::Time::now();
-      if (mFrameOverride != "") {
-        objects.header.frame_id = mFrameOverride;
-      } else {
-        objects.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName() + "/recognition_objects";
-      }
-      for (int i = 0; i < mCamera->getRecognitionNumberOfObjects(); ++i) {
-        webots_ros::RecognitionObject object;
-        object.position.x = cameraObjects[i].position[0];
-        object.position.y = cameraObjects[i].position[1];
-        object.position.z = cameraObjects[i].position[2];
-        RosMathUtils::axisAngleToQuaternion(cameraObjects[i].orientation, object.orientation);
-        object.position_on_image.x = cameraObjects[i].position_on_image[0];
-        object.position_on_image.y = cameraObjects[i].position_on_image[1];
-        object.size_on_image.x = cameraObjects[i].size_on_image[0];
-        object.size_on_image.y = cameraObjects[i].size_on_image[1];
-        object.number_of_colors = cameraObjects[i].number_of_colors;
-        object.model = std::string(cameraObjects[i].model);
-        for (int j = 0; j < object.number_of_colors; j++) {
-          geometry_msgs::Vector3 color;
-          color.x = cameraObjects[i].colors[3 * j];
-          color.y = cameraObjects[i].colors[3 * j + 1];
-          color.z = cameraObjects[i].colors[3 * j + 2];
-          object.colors.push_back(color);
-        }
-        objects.objects.push_back(object);
-      }
-      mRecognitionObjectsPublisher.publish(objects);
+    const CameraRecognitionObject *cameraObjects = mCamera->getRecognitionObjects();
+    webots_ros::RecognitionObjects objects;
+    objects.header.stamp = ros::Time::now();
+    if (mFrameOverride != "") {
+      objects.header.frame_id = mFrameOverride;
+    } else {
+      objects.header.frame_id = mFrameIdPrefix + RosDevice::fixedDeviceName() + "/recognition_objects";
     }
+    for (int i = 0; i < mCamera->getRecognitionNumberOfObjects(); ++i) {
+      webots_ros::RecognitionObject object;
+      object.position.x = cameraObjects[i].position[0];
+      object.position.y = cameraObjects[i].position[1];
+      object.position.z = cameraObjects[i].position[2];
+      RosMathUtils::axisAngleToQuaternion(cameraObjects[i].orientation, object.orientation);
+      object.position_on_image.x = cameraObjects[i].position_on_image[0];
+      object.position_on_image.y = cameraObjects[i].position_on_image[1];
+      object.size_on_image.x = cameraObjects[i].size_on_image[0];
+      object.size_on_image.y = cameraObjects[i].size_on_image[1];
+      object.number_of_colors = cameraObjects[i].number_of_colors;
+      object.model = std::string(cameraObjects[i].model);
+      for (int j = 0; j < object.number_of_colors; j++) {
+        geometry_msgs::Vector3 color;
+        color.x = cameraObjects[i].colors[3 * j];
+        color.y = cameraObjects[i].colors[3 * j + 1];
+        color.z = cameraObjects[i].colors[3 * j + 2];
+        object.colors.push_back(color);
+      }
+      objects.objects.push_back(object);
+    }
+    mRecognitionObjectsPublisher.publish(objects);
   }
 
   // if subscriber exist
-  if (mRecognitionSegmentationPublisher.getNumSubscribers() > 0 ||
-    mItRecognitionSegmentationPublisher.getNumSubscribers() > 0) {
-    // enable recognition if not active
-    if (mCamera->getRecognitionSamplingPeriod() <= 0) {
-      mCamera->recognitionEnable(mCamera->getSamplingPeriod());  // TODO allow lower sampling rate here?
-    }
+  if (num_seg_subs > 0) {
     // enable segmentation if not active
     if (!mCamera->isRecognitionSegmentationEnabled()) {
       mCamera->enableRecognitionSegmentation();
